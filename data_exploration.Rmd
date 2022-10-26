@@ -1,5 +1,6 @@
 ---
 title: "Data Exploration"
+subtitle: "Data Exploration"
 author: "Martin Brand"
 date: "2022-10-25"
 output: html_document
@@ -9,22 +10,57 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r, message = FALSE, results="hide", echo=TRUE}
+library(ggplot2)
+library(readxl)
+library(patchwork)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+We import the data provided by the authors as Suplementary Table 1 and load it into a dataframe. The dataset contains for example the MSI/MSS classifications.
+```{r, warning=FALSE}
+# suppress warning message caused by na values
+dataset <- read_excel("C:/Users/Martin/Documents/Master/Forschungspraktikum/Chan/data/supplementary_table.xlsx")
+# transform "NA" strings to na values
+dataset[dataset=="NA"] <- NA 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+We visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE datasets together and separately. We see that the number of MSS cell lines is much higher than the number of MSI cell lines.
+```{r}
+# count rows of MSI and MSS classified cell lines
+counts_msi <- sum(dataset$CCLE_MSI=="MSI" & (!is.na(dataset$DRIVE_WRN_D2) | !is.na(dataset$CRISPR_WRN_CERES)), na.rm = TRUE)
+counts_mss <- sum(dataset$CCLE_MSI=="MSS" & (!is.na(dataset$DRIVE_WRN_D2) | !is.na(dataset$CRISPR_WRN_CERES)), na.rm = TRUE)
+
+# create dataframe with counts
+counts.df <- data.frame(counts=c(counts_msi, counts_mss), classification=c("MSI", "MSS"))
+
+# create plot for both datasets together
+bar_chart <- ggplot(data=counts.df, aes(x=classification, y=counts)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  ggtitle("Both Datasets in total")
+bar_chart <- bar_chart + labs(x="",y="number of cell lines") + ylim(0,600)
+
+# count rows of MSI and MSS classified cell lines in Achilles dataset
+counts_msi_achilles <- sum(dataset$CCLE_MSI=="MSI" & !is.na(dataset$CRISPR_WRN_CERES), na.rm = TRUE)
+counts_mss_achilles <- sum(dataset$CCLE_MSI=="MSS" & !is.na(dataset$CRISPR_WRN_CERES), na.rm = TRUE)
+counts_achilles.df <- data.frame(counts=c(counts_msi_achilles, counts_mss_achilles), classification=c("MSI", "MSS"))
+
+# create plot for Achilles dataset
+bar_chart_achilles <- ggplot(data=counts_achilles.df, aes(x=classification, y=counts)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  ggtitle("Achilles")
+bar_chart_achilles <- bar_chart_achilles + labs(x="",y="number of cell lines") + ylim(0,600)
+
+# count rows of MSI and MSS classified cell lines in DRIVE dataset
+counts_msi_drive <- sum(dataset$CCLE_MSI=="MSI" & !is.na(dataset$DRIVE_WRN_D2), na.rm = TRUE)
+counts_mss_drive <- sum(dataset$CCLE_MSI=="MSS" & !is.na(dataset$DRIVE_WRN_D2), na.rm = TRUE)
+counts_drive.df <- data.frame(counts=c(counts_msi_drive, counts_mss_drive), classification=c("MSI", "MSS"))
+
+# create plot for DRIVE dataset
+bar_chart_drive <- ggplot(data=counts_drive.df, aes(x=classification, y=counts)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  ggtitle("DRIVE")
+bar_chart_drive <- bar_chart_drive + labs(x="",y="number of cell lines") + ylim(0,600)
+
+# show plots
+bar_chart + bar_chart_achilles + bar_chart_drive
+```
