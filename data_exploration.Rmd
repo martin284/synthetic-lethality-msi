@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(readxl)
 library(patchwork)
+library(tidyverse)
 ```
 
 We import the data provided by the authors as Suplementary Table 1 and load it into a dataframe. The dataset contains for example the MSI/MSS classifications.
@@ -22,6 +23,8 @@ We import the data provided by the authors as Suplementary Table 1 and load it i
 dataset <- read_excel("C:/Users/Martin/Documents/Master/Forschungspraktikum/Chan/data/supplementary_table.xlsx")
 # transform "NA" strings to na values
 dataset[dataset=="NA"] <- NA 
+# transform numbers saved as strings to numbers
+dataset <- transform(dataset, DRIVE_WRN_D2=as.numeric(DRIVE_WRN_D2), CRISPR_WRN_CERES = as.numeric(CRISPR_WRN_CERES), avg_WRN_dep=as.numeric(avg_WRN_dep))
 ```
 
 We visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE datasets together and separately. We see that the number of MSS cell lines is much higher than the number of MSI cell lines.
@@ -63,4 +66,30 @@ bar_chart_drive <- bar_chart_drive + labs(x="",y="number of cell lines") + ylim(
 
 # show plots
 bar_chart + bar_chart_achilles + bar_chart_drive
+```
+
+We visualize the dependency scores for WRN for each cell line.
+```{r}
+# create subset for DRIVE dataset
+dep_scores_drive <- dataset %>% select(1,5)
+dep_scores_drive <- dep_scores_drive[!is.na(dep_scores_drive$DRIVE_WRN_D2),]
+
+# create histogram plot
+histogram_plot <- ggplot(dep_scores_drive, aes(x=DRIVE_WRN_D2)) +
+  geom_histogram(binwidth = 0.2) +
+  xlab("Dependency Score")
+
+# create density plot
+density_plot <- ggplot(dep_scores_drive, aes(x=DRIVE_WRN_D2)) +
+  geom_density() +
+  xlab("Dependency Score")
+
+# create box plot
+box_plot <- ggplot(dep_scores_drive, aes(x=DRIVE_WRN_D2)) +
+  geom_boxplot() +
+  xlab("Dependency Score") +
+  coord_flip()
+
+# show plot
+histogram_plot + density_plot + box_plot
 ```
