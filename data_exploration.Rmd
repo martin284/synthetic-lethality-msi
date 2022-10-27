@@ -17,6 +17,7 @@ library(patchwork)
 library(tidyverse)
 ```
 
+## Preprocessing of the Data
 We import the data provided by the authors as Suplementary Table 1 and load it into a dataframe. The dataset contains for example the MSI/MSS classifications.
 ```{r, warning=FALSE}
 # suppress warning message caused by na values
@@ -27,6 +28,7 @@ dataset[dataset=="NA"] <- NA
 dataset <- transform(dataset, DRIVE_WRN_D2=as.numeric(DRIVE_WRN_D2), CRISPR_WRN_CERES = as.numeric(CRISPR_WRN_CERES), avg_WRN_dep=as.numeric(avg_WRN_dep))
 ```
 
+## Visualization of Classifications
 We visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE datasets together and separately. We see that the number of MSS cell lines is much higher than the number of MSI cell lines.
 ```{r}
 # count rows of MSI and MSS classified cell lines
@@ -36,11 +38,14 @@ counts_mss <- sum(dataset$CCLE_MSI=="MSS" & (!is.na(dataset$DRIVE_WRN_D2) | !is.
 # create dataframe with counts
 counts.df <- data.frame(counts=c(counts_msi, counts_mss), classification=c("MSI", "MSS"))
 
+# define limits on y axis
+y_max <- 600
+
 # create plot for both datasets together
 bar_chart <- ggplot(data=counts.df, aes(x=classification, y=counts)) +
   geom_bar(stat = "identity", width = 0.5) +
   ggtitle("Both Datasets in total")
-bar_chart <- bar_chart + labs(x="",y="number of cell lines") + ylim(0,600)
+bar_chart <- bar_chart + labs(x="",y="number of cell lines") + ylim(0,y_max)
 
 # count rows of MSI and MSS classified cell lines in Achilles dataset
 counts_msi_achilles <- sum(dataset$CCLE_MSI=="MSI" & !is.na(dataset$CRISPR_WRN_CERES), na.rm = TRUE)
@@ -51,7 +56,7 @@ counts_achilles.df <- data.frame(counts=c(counts_msi_achilles, counts_mss_achill
 bar_chart_achilles <- ggplot(data=counts_achilles.df, aes(x=classification, y=counts)) +
   geom_bar(stat = "identity", width = 0.5) +
   ggtitle("Achilles")
-bar_chart_achilles <- bar_chart_achilles + labs(x="",y="number of cell lines") + ylim(0,600)
+bar_chart_achilles <- bar_chart_achilles + labs(x="",y="number of cell lines") + ylim(0,y_max)
 
 # count rows of MSI and MSS classified cell lines in DRIVE dataset
 counts_msi_drive <- sum(dataset$CCLE_MSI=="MSI" & !is.na(dataset$DRIVE_WRN_D2), na.rm = TRUE)
@@ -62,34 +67,190 @@ counts_drive.df <- data.frame(counts=c(counts_msi_drive, counts_mss_drive), clas
 bar_chart_drive <- ggplot(data=counts_drive.df, aes(x=classification, y=counts)) +
   geom_bar(stat = "identity", width = 0.5) +
   ggtitle("DRIVE")
-bar_chart_drive <- bar_chart_drive + labs(x="",y="number of cell lines") + ylim(0,600)
+bar_chart_drive <- bar_chart_drive + labs(x="",y="number of cell lines") + ylim(0,y_max)
 
 # show plots
 bar_chart + bar_chart_achilles + bar_chart_drive
 ```
 
+## Visualization of Dependency Score's Distribution
 We visualize the dependency scores for WRN for each cell line.
 ```{r}
 # create subset for DRIVE dataset
-dep_scores_drive <- dataset %>% select(1,5)
+dep_scores_drive <- dataset %>% select(1,4,5)
 dep_scores_drive <- dep_scores_drive[!is.na(dep_scores_drive$DRIVE_WRN_D2),]
 
+# create template plot
+plot_drive <- ggplot(dep_scores_drive, aes(x=DRIVE_WRN_D2)) +
+  ggtitle("DRIVE")
+
 # create histogram plot
-histogram_plot <- ggplot(dep_scores_drive, aes(x=DRIVE_WRN_D2)) +
+histogram_plot_drive <- plot_drive +
   geom_histogram(binwidth = 0.2) +
   xlab("Dependency Score")
 
 # create density plot
-density_plot <- ggplot(dep_scores_drive, aes(x=DRIVE_WRN_D2)) +
+density_plot_drive <- plot_drive +
   geom_density() +
   xlab("Dependency Score")
 
 # create box plot
-box_plot <- ggplot(dep_scores_drive, aes(x=DRIVE_WRN_D2)) +
+box_plot_drive <- plot_drive +
   geom_boxplot() +
   xlab("Dependency Score") +
   coord_flip()
 
-# show plot
-histogram_plot + density_plot + box_plot
+# do the same for Achilles dataset
+dep_scores_achilles<- dataset %>% select(1,4,6)
+dep_scores_achilles <- dep_scores_achilles[!is.na(dep_scores_achilles$CRISPR_WRN_CERES),]
+
+plot_achilles <- ggplot(dep_scores_achilles, aes(x=CRISPR_WRN_CERES)) +
+  ggtitle("Achilles")
+
+histogram_plot_achilles <- plot_achilles +
+  geom_histogram(binwidth = 0.1) +
+  xlab("Dependency Score")
+
+density_plot_achilles <- plot_achilles +
+  geom_density() +
+  xlab("Dependency Score")
+
+box_plot_achilles <- plot_achilles +
+  geom_boxplot() +
+  xlab("Dependency Score") +
+  coord_flip()
+
+# show plots
+histogram_plot_drive + density_plot_drive + box_plot_drive + histogram_plot_achilles + density_plot_achilles + box_plot_achilles
+
+# use same x limits for DRIVE and Achilles?
+# the ranges of DRIVE and Achilles data are different.. why?
+```
+## Histograms
+We visualize the the difference between the dependency scores for MSS and MSI cells as histograms.
+```{r}
+# create different dataframes for MSS and MSI cells
+dep_scores_drive_mss <- dep_scores_drive[dep_scores_drive$CCLE_MSI=="MSS",]
+dep_scores_drive_msi <- dep_scores_drive[dep_scores_drive$CCLE_MSI=="MSI",]
+dep_scores_achilles_mss <- dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSS",]
+dep_scores_achilles_msi <- dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSI",]
+
+# create template plot for mss and msi cells of DRIVE dataset
+plot_drive_mss <- ggplot(dep_scores_drive_mss, aes(x=DRIVE_WRN_D2))
+plot_drive_msi <- ggplot(dep_scores_drive_msi, aes(x=DRIVE_WRN_D2))
+
+# add limits in x axis
+x_min <- -3
+x_max <- 1
+
+# create histograms
+histogram_plot_drive_mss <- plot_drive_mss +
+  geom_histogram(binwidth = 0.1) +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score") +
+  ggtitle("DRIVE and MSS")
+
+histogram_plot_drive_msi <- plot_drive_msi +
+  geom_histogram(binwidth = 0.1) +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score")+
+  ggtitle("DRIVE and MSI")
+
+# do the same with Achilles dataset
+plot_achilles_mss <- ggplot(dep_scores_achilles_mss, aes(x=CRISPR_WRN_CERES))
+plot_achilles_msi <- ggplot(dep_scores_achilles_msi, aes(x=CRISPR_WRN_CERES))
+
+histogram_plot_achilles_mss <- plot_achilles_mss +
+  geom_histogram(binwidth = 0.1) +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score")+
+  ggtitle("Achilles and MSS")
+
+histogram_plot_achilles_msi <- plot_achilles_msi +
+  geom_histogram(binwidth = 0.1) +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score")+
+  ggtitle("Achilles and MSI")
+
+
+histogram_plot_drive_mss + histogram_plot_drive_msi + histogram_plot_achilles_mss + histogram_plot_achilles_msi
+
+# the offset is different in DRIVE and Achilles... why?
+# warning messages?
+```
+
+## Density Plots
+We visualize the the difference between the dependency scores for MSS and MSI cells as density plots.
+```{r}
+# define limits for x axis
+x_min <- -3
+x_max <- 1
+
+# create density plots
+density_plot_drive_mss <- plot_drive_mss +
+  geom_density() +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score") +
+  ggtitle("DRIVE and MSS")
+
+density_plot_drive_msi <- plot_drive_msi +
+  geom_density() +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score")+
+  ggtitle("DRIVE and MSI")
+
+density_plot_achilles_mss <- plot_achilles_mss +
+  geom_density() +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score") +
+  ggtitle("Achilles and MSS")
+
+density_plot_achilles_msi <- plot_achilles_msi +
+  geom_density() +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score") +
+  ggtitle("Achilles and MSI")
+
+# show plots
+density_plot_drive_mss + density_plot_drive_msi + density_plot_achilles_mss + density_plot_achilles_msi
+```
+
+## Box Plots
+We visualize the the difference between the dependency scores for MSS and MSI cells as box plots.
+```{r}
+# define limits for x axis
+x_min <- -3
+x_max <- 1
+
+# create density plots
+boxplot_drive_mss <- plot_drive_mss +
+  geom_boxplot() +
+  coord_flip() +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score") +
+  ggtitle("DRIVE and MSS")
+
+boxplot_drive_msi <- plot_drive_msi +
+  geom_boxplot() +
+  coord_flip() +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score")+
+  ggtitle("DRIVE and MSI")
+
+boxplot_achilles_mss <- plot_achilles_mss +
+  geom_boxplot() +
+  coord_flip() +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score") +
+  ggtitle("Achilles and MSS")
+
+boxplot_achilles_msi <- plot_achilles_msi +
+  geom_boxplot() +
+  coord_flip() +
+  xlim(x_min,x_max) +
+  xlab("Dependency Score") +
+  ggtitle("Achilles and MSI")
+
+# show plots
+boxplot_drive_mss + boxplot_drive_msi + boxplot_achilles_mss + boxplot_achilles_msi
 ```
