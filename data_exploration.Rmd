@@ -15,6 +15,7 @@ library(ggplot2)
 library(readxl)
 library(patchwork)
 library(tidyverse)
+library(caret)
 ```
 
 ## Preprocessing of the Data
@@ -222,7 +223,7 @@ We visualize the the difference between the dependency scores for MSS and MSI ce
 x_min <- -3
 x_max <- 1
 
-# create density plots
+# create box plots
 boxplot_drive_mss <- plot_drive_mss +
   geom_boxplot() +
   coord_flip() +
@@ -253,4 +254,27 @@ boxplot_achilles_msi <- plot_achilles_msi +
 
 # show plots
 boxplot_drive_mss + boxplot_drive_msi + boxplot_achilles_mss + boxplot_achilles_msi
+```
+
+## Correlation of Achilles and DRIVE dataset
+```{r}
+# extract dependency scores
+dep_scores <- dataset %>% select(5,6)
+# remove rows with na
+dep_scores <- na.omit(dep_scores)
+# # normalise values
+# process <- preProcess(dep_scores, method=c("range"))
+# norm_scores <- predict(process, dep_scores)
+
+# remove outliers
+outliers_achilles <- boxplot(dep_scores$CRISPR_WRN_CERES, plot=FALSE)$out
+cleaned_dep_scores<- dep_scores[-which(dep_scores$CRISPR_WRN_CERES %in% outliers_achilles),]
+outliers_drive <- boxplot(cleaned_dep_scores$DRIVE_WRN_D2, plot=FALSE)$out
+cleaned_dep_scores<- cleaned_dep_scores[-which(cleaned_dep_scores$DRIVE_WRN_D2 %in% outliers_drive),]
+# create scatter plot with and without outliers
+corr_plot <- ggplot(dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
+  geom_point()
+cleaned_corr_plot <- ggplot(cleaned_dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
+  geom_point()
+corr_plot + cleaned_corr_plot
 ```
