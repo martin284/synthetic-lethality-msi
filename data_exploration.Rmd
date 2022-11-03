@@ -1,6 +1,7 @@
 ---
 title: "Data Exploration"
-subtitle: "Data Exploration"
+subtitle: "Data Exploration of 'WRN helicase is a synthetic lethal target in
+microsatellite unstable cancers'"
 author: "Martin Brand"
 date: "2022-10-25"
 output: html_document
@@ -81,137 +82,6 @@ bar_chart_drive <- bar_chart_drive + labs(x="",y="number of cell lines") + coord
 bar_chart + bar_chart_achilles + bar_chart_drive
 ```
 
-## Histograms
-We visualize the the difference between the dependency scores for MSS and MSI cells as histograms.
-```{r}
-# create subset for both DRIVE and Achilles datasets
-dep_scores_drive <- data_suppl %>% select(1,4,5)
-dep_scores_drive <- dep_scores_drive[!is.na(dep_scores_drive$DRIVE_WRN_D2),]
-dep_scores_drive <- dep_scores_drive[!is.na(dep_scores_drive$CCLE_MSI),]
-
-dep_scores_achilles<- data_suppl %>% select(1,4,6)
-dep_scores_achilles <- dep_scores_achilles[!is.na(dep_scores_achilles$CRISPR_WRN_CERES),]
-dep_scores_achilles <- dep_scores_achilles[!is.na(dep_scores_achilles$CCLE_MSI),]
-
-# create different dataframes for MSS and MSI cells
-dep_scores_drive_mss <- data.frame(dep_scores_drive[dep_scores_drive$CCLE_MSI=="MSS",])  
-dep_scores_drive_msi <- data.frame(dep_scores_drive[dep_scores_drive$CCLE_MSI=="MSI",])
-dep_scores_achilles_mss <- data.frame(dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSS",])
-dep_scores_achilles_msi <-data.frame(dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSI",])
-# merge all datasets?
-
-# change column names
-colnames(dep_scores_drive_mss)[3] <- "dep_score"
-colnames(dep_scores_drive_msi)[3] <- "dep_score"
-colnames(dep_scores_achilles_mss)[3] <- "dep_score"
-colnames(dep_scores_achilles_msi)[3] <- "dep_score"
-
-# create template plot for mss and msi cells of DRIVE dataset
-plot_drive_mss <- ggplot(dep_scores_drive_mss, aes(x=dep_score))
-plot_drive_msi <- ggplot(dep_scores_drive_msi, aes(x=dep_score))
-
-# add limits in x axis
-limits <- c(-3,1)
-
-# create histograms
-histogram_plot_drive_mss <- plot_drive_mss +
-  geom_histogram(binwidth = 0.1) +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("DRIVE and MSS")
-
-histogram_plot_drive_msi <- plot_drive_msi +
-  geom_histogram(binwidth = 0.1) +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score")+
-  ggtitle("DRIVE and MSI")
-
-# do the same with Achilles dataset
-plot_achilles_mss <- ggplot(dep_scores_achilles_mss, aes(x=dep_score))
-plot_achilles_msi <- ggplot(dep_scores_achilles_msi, aes(x=dep_score))
-
-histogram_plot_achilles_mss <- plot_achilles_mss +
-  geom_histogram(binwidth = 0.1) +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score")+
-  ggtitle("Achilles and MSS")
-
-histogram_plot_achilles_msi <- plot_achilles_msi +
-  geom_histogram(binwidth = 0.1) +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score")+
-  ggtitle("Achilles and MSI")
-
-
-histogram_plot_drive_mss + histogram_plot_drive_msi + histogram_plot_achilles_mss + histogram_plot_achilles_msi
-
-# the offset is different in DRIVE and Achilles... why?
-```
-
-## Density Plots
-We visualize the the difference between the dependency scores for MSS and MSI cells as density plots.
-```{r}
-# create density plots
-density_plot_drive_mss <- plot_drive_mss +
-  geom_density() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("DRIVE and MSS")
-
-density_plot_drive_msi <- plot_drive_msi +
-  geom_density() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score")+
-  ggtitle("DRIVE and MSI")
-
-density_plot_achilles_mss <- plot_achilles_mss +
-  geom_density() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("Achilles and MSS")
-
-density_plot_achilles_msi <- plot_achilles_msi +
-  geom_density() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("Achilles and MSI")
-
-# show plots
-density_plot_drive_mss + density_plot_drive_msi + density_plot_achilles_mss + density_plot_achilles_msi
-```
-
-## Box Plots
-We visualize the the difference between the dependency scores for MSS and MSI cells as box plots.
-```{r}
-# create box plots
-boxplot_drive_mss <- plot_drive_mss +
-  geom_boxplot() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("DRIVE and MSS")
-
-boxplot_drive_msi <- plot_drive_msi +
-  geom_boxplot() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score")+
-  ggtitle("DRIVE and MSI")
-
-boxplot_achilles_mss <- plot_achilles_mss +
-  geom_boxplot() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("Achilles and MSS")
-
-boxplot_achilles_msi <- plot_achilles_msi +
-  geom_boxplot() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("Achilles and MSI")
-
-# show plots
-boxplot_drive_mss + boxplot_drive_msi + boxplot_achilles_mss + boxplot_achilles_msi
-```
-
 ## Correlation of Achilles and DRIVE dataset
 ```{r}
 # extract dependency scores
@@ -235,35 +105,139 @@ cleaned_corr_plot <- ggplot(cleaned_dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN
 corr_plot + cleaned_corr_plot
 ```
 
+## Histograms
+We visualize the the difference between the dependency scores for MSS and MSI cells as histograms.
+```{r}
+# create MSI/MSS specific subsets with dependency scores
+dep_scores_melted <- data_suppl %>% select(1,4,5,6)
+dep_scores_melted <- dep_scores_melted[!is.na(dep_scores_melted$CCLE_MSI),]
+colnames(dep_scores_melted) <- c("CCLE_ID", "CCLE_MSI", "DRIVE", "Achilles")
+dep_scores_melted <- melt(data = dep_scores_melted, id.vars = c("CCLE_ID","CCLE_MSI"))
+colnames(dep_scores_melted) <- c("CCLE_ID", "CCLE_MSI", "dataset", "dep_score")
+dep_scores_melted <- dep_scores_melted[!is.na(dep_scores_melted$dep_score),]
+dep_scores_mss <- data.frame(dep_scores_melted[dep_scores_melted$CCLE_MSI=="MSS",])
+dep_scores_msi <- data.frame(dep_scores_melted[dep_scores_melted$CCLE_MSI=="MSI",])
+
+# create plots for MSS and MSI cells separately
+limits <- c(-3,1) # add limits in x axis
+
+plot_mss <- ggplot(data = dep_scores_mss, aes(x=dep_score, fill=dataset)) +
+  geom_histogram(binwidth = 0.2) +
+  coord_cartesian(xlim = limits) +
+  xlab("Dependency Score") +
+  ggtitle("Dependency Scores in MSS Cells") +
+  theme(legend.position="bottom")
+
+plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, fill=dataset)) +
+  geom_histogram(binwidth = 0.2) +
+  coord_cartesian(xlim = limits) +
+  xlab("Dependency Score") +
+  ggtitle("Dependency Scores in MSI Cells") +
+  theme(legend.position="bottom")
+
+plot_mss + plot_msi
+
+# the offset is different in DRIVE and Achilles... why?
+```
+
+## Density Plots
+We visualize the the difference between the dependency scores for MSS and MSI cells as density plots.
+```{r}
+plot_mss <- ggplot(data = dep_scores_mss, aes(x=dep_score, color=dataset)) +
+  geom_density(size=1) +
+  coord_cartesian(xlim = limits) +
+  xlab("Dependency Score") +
+  ggtitle("Dependency Scores in MSS Cells") +
+  theme(legend.position="bottom")
+
+plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, color=dataset)) +
+  geom_density(size=1) +
+  coord_cartesian(xlim = limits) +
+  xlab("Dependency Score") +
+  ggtitle("Dependency Scores in MSI Cells") +
+  theme(legend.position="bottom")
+
+plot_mss + plot_msi
+```
+
+## Box Plots
+We visualize the the difference between the dependency scores for MSS and MSI cells as box plots.
+```{r}
+# split Achilles and DRIVE datasets
+dep_scores_mss_drive <- dep_scores_mss[dep_scores_mss$dataset=="DRIVE",]
+dep_scores_mss_achilles <- dep_scores_mss[dep_scores_mss$dataset=="Achilles",]
+dep_scores_msi_drive <- dep_scores_msi[dep_scores_msi$dataset=="DRIVE",]
+dep_scores_msi_achilles <- dep_scores_msi[dep_scores_msi$dataset=="Achilles",]
+
+# create box plots
+plot_drive_mss <- ggplot(dep_scores_mss_drive, aes(x=dep_score)) +
+  geom_boxplot() +
+  coord_cartesian(xlim = limits) +
+  xlab("Dependency Score") +
+  ggtitle("MSS in DRIVE")
+
+plot_achilles_mss <- ggplot(dep_scores_mss_achilles, aes(x=dep_score)) +
+  geom_boxplot() +
+  coord_cartesian(xlim = limits) +
+  xlab("Dependency Score") +
+  ggtitle("MSS in Achilles")
+
+plot_drive_msi <- ggplot(dep_scores_msi_drive, aes(x=dep_score)) +
+  geom_boxplot() +
+  coord_cartesian(xlim = limits) +
+  xlab("Dependency Score") +
+  ggtitle("MSI in DRIVE")
+
+plot_achilles_msi <- ggplot(dep_scores_msi_achilles, aes(x=dep_score)) +
+  geom_boxplot() +
+  coord_cartesian(xlim = limits) +
+  xlab("Dependency Score") +
+  ggtitle("MSI in Achilles")
+
+# show plots
+plot_drive_mss + plot_drive_msi + plot_achilles_mss + plot_achilles_msi
+```
+
 ## Distribution of randomly picked KD/KO genes
 For comparison we plot the distribution of randomly picked KO/KD genes.
 ```{r}
-# pick randomly a gene  and extract dependency scores for this specific gene
+# extract dependency scores for ABHD1
 abhd1_dep_scores_achilles <- data.frame(dep_scores_18Q4_achilles[,"ABHD1"])
+
 # format dataset and add column for CCLE_ID
 abhd1_dep_scores_achilles$CCLE_ID <- rownames(abhd1_dep_scores_achilles)
 colnames(abhd1_dep_scores_achilles) <- c("dep_score_abhd1","CCLE_ID")
 rownames(abhd1_dep_scores_achilles) <- c()
-dep_scores_achilles_merged <- merge(abhd1_dep_scores_achilles, dep_scores_achilles, by="CCLE_ID")
-dep_scores_achilles_merged <- dep_scores_achilles_merged[,c(1,3,2,4)]
-colnames(dep_scores_achilles_merged) <- c("CCLE_ID","CCLE_MSI","ABHD1", "WRN")
-dep_scores_achilles_merged <- melt(data = dep_scores_achilles_merged,id.vars = c("CCLE_ID","CCLE_MSI"))
-colnames(dep_scores_achilles_merged) <- c("CCLE_ID","CCLE_MSI","KD_KO_gene", "dep_score")
 
-# create density plots for MSS cells
-p1 <- ggplot(data=dep_scores_achilles_merged[dep_scores_achilles_merged$CCLE_MSI=="MSS",],aes(x=dep_score, color=KD_KO_gene)) +
-  geom_density() +
+# extract subset containing CCLE_IDs, dependency scores and MSI/MSS classifications
+dep_scores_achilles <- data_suppl %>% select(1,4,6)
+
+# merge with dependency scores of ABHD1
+dep_scores_achilles <- merge(abhd1_dep_scores_achilles, dep_scores_achilles, by="CCLE_ID")
+dep_scores_achilles <- dep_scores_achilles[,c(1,3,2,4)]
+colnames(dep_scores_achilles) <- c("CCLE_ID","CCLE_MSI","ABHD1", "WRN")
+
+# melt dataset for better plotting
+dep_scores_achilles <- melt(data = dep_scores_achilles,id.vars = c("CCLE_ID","CCLE_MSI"))
+colnames(dep_scores_achilles) <- c("CCLE_ID","CCLE_MSI","KD_KO_gene", "dep_score")
+
+# remove rows with NAs
+dep_scores_achilles <- na.omit(dep_scores_achilles)
+
+# create density plot for MSS cells
+plot_mss <- ggplot(data=dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSS",],aes(x=dep_score, fill=KD_KO_gene)) +
+  geom_histogram(binwidth = 0.1) +
   ggtitle("MSS in Achilles") +
   xlab("Dependency Score") +
   theme(legend.position="bottom")
 
-# create density plots for MSI cells
-p2 <- ggplot(data=dep_scores_achilles_merged[dep_scores_achilles_merged$CCLE_MSI=="MSI",],aes(x=dep_score, color=KD_KO_gene)) +
-  geom_density() +
+# create density plot for MSI cells
+plot_msi <- ggplot(data=dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSI",],aes(x=dep_score, fill=KD_KO_gene)) +
+  geom_histogram(binwidth = 0.1) +
   ggtitle("MSI in Achilles") +
   xlab("Dependency Score") +
   theme(legend.position="bottom")
 
 # plot results
-p1 + p2
+plot_mss + plot_msi
 ```
