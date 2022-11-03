@@ -47,13 +47,13 @@ counts_mss <- sum(data_suppl$CCLE_MSI=="MSS" & (!is.na(data_suppl$DRIVE_WRN_D2) 
 counts.df <- data.frame(counts=c(counts_msi, counts_mss), classification=c("MSI", "MSS"))
 
 # define limits on y axis
-y_max <- 600
+limits <- c(0,600)
 
 # create plot for both datasets together
 bar_chart <- ggplot(data=counts.df, aes(x=classification, y=counts)) +
   geom_bar(stat = "identity", width = 0.5) +
   ggtitle("Both Datasets in total")
-bar_chart <- bar_chart + labs(x="",y="number of cell lines") + ylim(0,y_max)
+bar_chart <- bar_chart + labs(x="",y="number of cell lines") + coord_cartesian(ylim = limits)
 
 # count rows of MSI and MSS classified cell lines in Achilles dataset
 counts_msi_achilles <- sum(data_suppl$CCLE_MSI=="MSI" & !is.na(data_suppl$CRISPR_WRN_CERES), na.rm = TRUE)
@@ -64,7 +64,7 @@ counts_achilles.df <- data.frame(counts=c(counts_msi_achilles, counts_mss_achill
 bar_chart_achilles <- ggplot(data=counts_achilles.df, aes(x=classification, y=counts)) +
   geom_bar(stat = "identity", width = 0.5) +
   ggtitle("Achilles")
-bar_chart_achilles <- bar_chart_achilles + labs(x="",y="number of cell lines") + ylim(0,y_max)
+bar_chart_achilles <- bar_chart_achilles + labs(x="",y="number of cell lines") + coord_cartesian(ylim = limits)
 
 # count rows of MSI and MSS classified cell lines in DRIVE dataset
 counts_msi_drive <- sum(data_suppl$CCLE_MSI=="MSI" & !is.na(data_suppl$DRIVE_WRN_D2), na.rm = TRUE)
@@ -75,7 +75,7 @@ counts_drive.df <- data.frame(counts=c(counts_msi_drive, counts_mss_drive), clas
 bar_chart_drive <- ggplot(data=counts_drive.df, aes(x=classification, y=counts)) +
   geom_bar(stat = "identity", width = 0.5) +
   ggtitle("DRIVE")
-bar_chart_drive <- bar_chart_drive + labs(x="",y="number of cell lines") + ylim(0,y_max)
+bar_chart_drive <- bar_chart_drive + labs(x="",y="number of cell lines") + coord_cartesian(ylim = limits)
 
 # show plots
 bar_chart + bar_chart_achilles + bar_chart_drive
@@ -247,20 +247,20 @@ rownames(abhd1_dep_scores_achilles) <- c()
 dep_scores_achilles_merged <- merge(abhd1_dep_scores_achilles, dep_scores_achilles, by="CCLE_ID")
 dep_scores_achilles_merged <- dep_scores_achilles_merged[,c(1,3,2,4)]
 colnames(dep_scores_achilles_merged) <- c("CCLE_ID","CCLE_MSI","ABHD1", "WRN")
-dep_scores_achilles_merged <- melt(dep_scores_achilles_merged)
+dep_scores_achilles_merged <- melt(data = dep_scores_achilles_merged,id.vars = c("CCLE_ID","CCLE_MSI"))
 colnames(dep_scores_achilles_merged) <- c("CCLE_ID","CCLE_MSI","KD_KO_gene", "dep_score")
 
 # create density plots for MSS cells
 p1 <- ggplot(data=dep_scores_achilles_merged[dep_scores_achilles_merged$CCLE_MSI=="MSS",],aes(x=dep_score, color=KD_KO_gene)) +
   geom_density() +
-  ggtitle("MSS and Achilles") +
+  ggtitle("MSS in Achilles") +
   xlab("Dependency Score") +
   theme(legend.position="bottom")
 
 # create density plots for MSI cells
 p2 <- ggplot(data=dep_scores_achilles_merged[dep_scores_achilles_merged$CCLE_MSI=="MSI",],aes(x=dep_score, color=KD_KO_gene)) +
   geom_density() +
-  ggtitle("MSI and Achilles") +
+  ggtitle("MSI in Achilles") +
   xlab("Dependency Score") +
   theme(legend.position="bottom")
 
