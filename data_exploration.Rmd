@@ -3,8 +3,31 @@ title: "Data Exploration"
 subtitle: "Data Exploration of 'WRN helicase is a synthetic lethal target in
 microsatellite unstable cancers'"
 author: "Martin Brand"
-date: "2022-10-25"
-output: html_document
+date: "`r format(Sys.time(), '%B %e, %Y')`"
+output:
+  bookdown::html_document2:
+    code_folding: hide
+    fig_caption: yes
+    number_sections: no
+    theme: cerulean
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    toc_collapsed: yes
+    fig_width: 8 
+    fig_height: 4 
+  bookdown::pdf_document2:
+    keep_tex: yes
+    fig_caption: yes
+    number_sections: no
+    toc: yes
+    toc_depth: 3
+graphics: yes
+header-includes:
+- \makeatletter\renewcommand*{\fps@figure}{h}\makeatother
+- \usepackage{placeins}
+geometry: margin=1in
+fontsize: 18pt
 ---
 
 ```{r setup, include=FALSE}
@@ -18,6 +41,7 @@ library(patchwork)
 library(tidyverse)
 library(caret)
 library(reshape2)
+library(ggpubr)
 ```
 
 ## Preprocessing of the Data
@@ -99,9 +123,9 @@ outliers_drive <- boxplot(cleaned_dep_scores$DRIVE_WRN_D2, plot=FALSE)$out
 cleaned_dep_scores<- cleaned_dep_scores[-which(cleaned_dep_scores$DRIVE_WRN_D2 %in% outliers_drive),]
 # create scatter plot with and without outliers
 corr_plot <- ggplot(dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
-  geom_point()
+  geom_point() + stat_cor()
 cleaned_corr_plot <- ggplot(cleaned_dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
-  geom_point()
+  geom_point() + stat_cor()
 corr_plot + cleaned_corr_plot
 ```
 
@@ -148,14 +172,16 @@ plot_mss <- ggplot(data = dep_scores_mss, aes(x=dep_score, color=dataset)) +
   coord_cartesian(xlim = limits) +
   xlab("Dependency Score") +
   ggtitle("Dependency Scores in MSS Cells") +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  geom_vline(xintercept = 0, linetype=2)
 
 plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, color=dataset)) +
   geom_density(size=1) +
   coord_cartesian(xlim = limits) +
   xlab("Dependency Score") +
   ggtitle("Dependency Scores in MSI Cells") +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") +
+  geom_vline(xintercept = 0, linetype=2)
 
 plot_mss + plot_msi
 ```
@@ -169,33 +195,13 @@ dep_scores_mss_achilles <- dep_scores_mss[dep_scores_mss$dataset=="Achilles",]
 dep_scores_msi_drive <- dep_scores_msi[dep_scores_msi$dataset=="DRIVE",]
 dep_scores_msi_achilles <- dep_scores_msi[dep_scores_msi$dataset=="Achilles",]
 
-# create box plots
-plot_drive_mss <- ggplot(dep_scores_mss_drive, aes(x=dep_score)) +
-  geom_boxplot() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("MSS in DRIVE")
+df <- rbind(dep_scores_mss, dep_scores_msi)
 
-plot_achilles_mss <- ggplot(dep_scores_mss_achilles, aes(x=dep_score)) +
-  geom_boxplot() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("MSS in Achilles")
+box_plot <- ggplot(df, aes(x = dataset, y= dep_score, fill = CCLE_MSI)) +
+  geom_violin() +
+  geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9))
 
-plot_drive_msi <- ggplot(dep_scores_msi_drive, aes(x=dep_score)) +
-  geom_boxplot() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("MSI in DRIVE")
-
-plot_achilles_msi <- ggplot(dep_scores_msi_achilles, aes(x=dep_score)) +
-  geom_boxplot() +
-  coord_cartesian(xlim = limits) +
-  xlab("Dependency Score") +
-  ggtitle("MSI in Achilles")
-
-# show plots
-plot_drive_mss + plot_drive_msi + plot_achilles_mss + plot_achilles_msi
+box_plot
 ```
 
 ## Distribution of randomly picked KD/KO genes
@@ -226,14 +232,14 @@ dep_scores_achilles <- na.omit(dep_scores_achilles)
 
 # create density plot for MSS cells
 plot_mss <- ggplot(data=dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSS",],aes(x=dep_score, fill=KD_KO_gene)) +
-  geom_histogram(binwidth = 0.1) +
+  geom_histogram(binwidth = 0.05) +
   ggtitle("MSS in Achilles") +
   xlab("Dependency Score") +
   theme(legend.position="bottom")
 
 # create density plot for MSI cells
 plot_msi <- ggplot(data=dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSI",],aes(x=dep_score, fill=KD_KO_gene)) +
-  geom_histogram(binwidth = 0.1) +
+  geom_histogram(binwidth = 0.05) +
   ggtitle("MSI in Achilles") +
   xlab("Dependency Score") +
   theme(legend.position="bottom")
