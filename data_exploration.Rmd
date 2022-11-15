@@ -45,9 +45,9 @@ library(ggpubr)
 ```
 
 ## Preprocessing of the Data
-We import the data provided by the authors as "Supplementary Table 1" and load it into a dataframe. The dataset contains for example the MSI/MSS classifications. Additionally, we import the "DepMap_18Q4_data.rds" dataset, which contains all dependency scores. 
+We import the data provided by the authors as "Supplementary Table 1" and load it into a dataframe. The dataset contains among others the MSI/MSS classifications. Additionally, we import the "DepMap_18Q4_data.rds" dataset, which contains all dependency scores. 
 ```{r, warning=FALSE}
-# suppress warning message caused by na values
+# suppress warning message caused by NA values
 data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/Chan/data/"
 # read file with MSS/MSI classifications
 data_suppl <- read_excel(paste0(data_dir, "supplementary_table.xlsx"))
@@ -55,6 +55,12 @@ data_suppl <- read_excel(paste0(data_dir, "supplementary_table.xlsx"))
 data_suppl[data_suppl=="NA"] <- NA 
 # transform numbers saved as strings to numbers
 data_suppl <- transform(data_suppl, DRIVE_WRN_D2=as.numeric(DRIVE_WRN_D2), CRISPR_WRN_CERES = as.numeric(CRISPR_WRN_CERES), avg_WRN_dep=as.numeric(avg_WRN_dep))
+# delete rows which appear neither in Achilles nor in DRIVE dataset
+data_suppl <- data_suppl[!is.na(data_suppl$DRIVE_WRN_D2) | !is.na(data_suppl$CRISPR_WRN_CERES), ]
+# delete rows which are classified as intermediate
+data_suppl <- data_suppl[data_suppl$CCLE_MSI!="indeterminate", ]
+# delete rows which are NA in classification
+data_suppl <- data_suppl[!is.na(data_suppl$CCLE_MSI), ]
 # read file with dependency scores
 data_18Q4 <- read_rds(file.path(data_dir, 'DepMap_18Q4_data.rds'))
 dep_scores_18Q4_drive <- data_18Q4[["DRIVE"]]
@@ -65,45 +71,38 @@ dep_scores_18Q4_achilles <- data_18Q4[["CRISPR"]]
 We visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE datasets together and separately. We see that the number of MSS cell lines is much higher than the number of MSI cell lines.
 ```{r}
 # count rows of MSI and MSS classified cell lines
-counts_msi <- sum(data_suppl$CCLE_MSI=="MSI" & (!is.na(data_suppl$DRIVE_WRN_D2) | !is.na(data_suppl$CRISPR_WRN_CERES)), na.rm = TRUE)
-counts_mss <- sum(data_suppl$CCLE_MSI=="MSS" & (!is.na(data_suppl$DRIVE_WRN_D2) | !is.na(data_suppl$CRISPR_WRN_CERES)), na.rm = TRUE)
+counts_class <- data.frame(table(data_suppl$CCLE_MSI))
 
-# create dataframe with counts
-counts.df <- data.frame(counts=c(counts_msi, counts_mss), classification=c("MSI", "MSS"))
+# count rows of MSI and MSS classified cell lines for each dataset separately
+counts_class_drive <- data.frame(table(data_suppl[!is.na(data_suppl$DRIVE_WRN_D2),]$CCLE_MSI))
+counts_class_achilles <- data.frame(table(data_suppl[!is.na(data_suppl$CRISPR_WRN_CERES),]$CCLE_MSI))
 
+# create plots
 # define limits on y axis
 limits <- c(0,600)
 
-# create plot for both datasets together
-bar_chart <- ggplot(data=counts.df, aes(x=classification, y=counts)) +
+bar_chart_total <- ggplot(data=counts_class, aes(x=Var1, y=Freq, fill=Var1)) +
+  theme(legend.position = "none") +
   geom_bar(stat = "identity", width = 0.5) +
-  ggtitle("Both Datasets in total")
-bar_chart <- bar_chart + labs(x="",y="number of cell lines") + coord_cartesian(ylim = limits)
+  ggtitle("Both Datasets in total") +
+  labs(x="",y="number of cell lines") +
+  coord_cartesian(ylim = limits)
 
-# count rows of MSI and MSS classified cell lines in Achilles dataset
-counts_msi_achilles <- sum(data_suppl$CCLE_MSI=="MSI" & !is.na(data_suppl$CRISPR_WRN_CERES), na.rm = TRUE)
-counts_mss_achilles <- sum(data_suppl$CCLE_MSI=="MSS" & !is.na(data_suppl$CRISPR_WRN_CERES), na.rm = TRUE)
-counts_achilles.df <- data.frame(counts=c(counts_msi_achilles, counts_mss_achilles), classification=c("MSI", "MSS"))
-
-# create plot for Achilles dataset
-bar_chart_achilles <- ggplot(data=counts_achilles.df, aes(x=classification, y=counts)) +
+bar_chart_drive <- ggplot(data=counts_class_drive, aes(x=Var1, y=Freq, fill=Var1)) +
+  theme(legend.position = "none") +
   geom_bar(stat = "identity", width = 0.5) +
-  ggtitle("Achilles")
-bar_chart_achilles <- bar_chart_achilles + labs(x="",y="number of cell lines") + coord_cartesian(ylim = limits)
+  ggtitle("DRIVE") +
+  labs(x="",y="number of cell lines") +
+  coord_cartesian(ylim = limits)
 
-# count rows of MSI and MSS classified cell lines in DRIVE dataset
-counts_msi_drive <- sum(data_suppl$CCLE_MSI=="MSI" & !is.na(data_suppl$DRIVE_WRN_D2), na.rm = TRUE)
-counts_mss_drive <- sum(data_suppl$CCLE_MSI=="MSS" & !is.na(data_suppl$DRIVE_WRN_D2), na.rm = TRUE)
-counts_drive.df <- data.frame(counts=c(counts_msi_drive, counts_mss_drive), classification=c("MSI", "MSS"))
-
-# create plot for DRIVE dataset
-bar_chart_drive <- ggplot(data=counts_drive.df, aes(x=classification, y=counts)) +
+bar_chart_achilles <- ggplot(data=counts_class_achilles, aes(x=Var1, y=Freq, fill=Var1)) +
+  theme(legend.position = "none") +
   geom_bar(stat = "identity", width = 0.5) +
-  ggtitle("DRIVE")
-bar_chart_drive <- bar_chart_drive + labs(x="",y="number of cell lines") + coord_cartesian(ylim = limits)
+  ggtitle("Achilles") +
+  labs(x="",y="number of cell lines") +
+  coord_cartesian(ylim = limits)
 
-# show plots
-bar_chart + bar_chart_achilles + bar_chart_drive
+bar_chart_total + bar_chart_drive + bar_chart_achilles
 ```
 
 ## Correlation of Achilles and DRIVE dataset
@@ -112,9 +111,6 @@ bar_chart + bar_chart_achilles + bar_chart_drive
 dep_scores <- data_suppl %>% select(5,6)
 # remove rows with na
 dep_scores <- na.omit(dep_scores)
-# # normalise values
-# process <- preProcess(dep_scores, method=c("range"))
-# norm_scores <- predict(process, dep_scores)
 
 # remove outliers
 outliers_achilles <- boxplot(dep_scores$CRISPR_WRN_CERES, plot=FALSE)$out
@@ -123,9 +119,11 @@ outliers_drive <- boxplot(cleaned_dep_scores$DRIVE_WRN_D2, plot=FALSE)$out
 cleaned_dep_scores<- cleaned_dep_scores[-which(cleaned_dep_scores$DRIVE_WRN_D2 %in% outliers_drive),]
 # create scatter plot with and without outliers
 corr_plot <- ggplot(dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
-  geom_point() + stat_cor()
+  geom_point() + stat_cor() +
+  ggtitle('Complete Correlation Plot')
 cleaned_corr_plot <- ggplot(cleaned_dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
-  geom_point() + stat_cor()
+  geom_point() + stat_cor() +
+  ggtitle('Zooming into Noise')
 corr_plot + cleaned_corr_plot
 ```
 
@@ -133,14 +131,13 @@ corr_plot + cleaned_corr_plot
 We visualize the the difference between the dependency scores for MSS and MSI cells as histograms.
 ```{r}
 # create MSI/MSS specific subsets with dependency scores
-dep_scores_melted <- data_suppl %>% select(1,4,5,6)
-dep_scores_melted <- dep_scores_melted[!is.na(dep_scores_melted$CCLE_MSI),]
-colnames(dep_scores_melted) <- c("CCLE_ID", "CCLE_MSI", "DRIVE", "Achilles")
-dep_scores_melted <- melt(data = dep_scores_melted, id.vars = c("CCLE_ID","CCLE_MSI"))
-colnames(dep_scores_melted) <- c("CCLE_ID", "CCLE_MSI", "dataset", "dep_score")
-dep_scores_melted <- dep_scores_melted[!is.na(dep_scores_melted$dep_score),]
-dep_scores_mss <- data.frame(dep_scores_melted[dep_scores_melted$CCLE_MSI=="MSS",])
-dep_scores_msi <- data.frame(dep_scores_melted[dep_scores_melted$CCLE_MSI=="MSI",])
+dep_scores <- data_suppl %>% select(1,4,5,6)
+colnames(dep_scores) <- c("CCLE_ID", "CCLE_MSI", "DRIVE", "Achilles")
+dep_scores <- melt(data = dep_scores, id.vars = c("CCLE_ID","CCLE_MSI"))
+colnames(dep_scores) <- c("CCLE_ID", "CCLE_MSI", "dataset", "dep_score")
+dep_scores <- dep_scores[!is.na(dep_scores$dep_score),]
+dep_scores_mss <- data.frame(dep_scores[dep_scores$CCLE_MSI=="MSS",])
+dep_scores_msi <- data.frame(dep_scores[dep_scores$CCLE_MSI=="MSI",])
 
 # create plots for MSS and MSI cells separately
 limits <- c(-3,1) # add limits in x axis
@@ -189,19 +186,27 @@ plot_mss + plot_msi
 ## Box Plots
 We visualize the the difference between the dependency scores for MSS and MSI cells as box plots.
 ```{r}
-# split Achilles and DRIVE datasets
-dep_scores_mss_drive <- dep_scores_mss[dep_scores_mss$dataset=="DRIVE",]
-dep_scores_mss_achilles <- dep_scores_mss[dep_scores_mss$dataset=="Achilles",]
-dep_scores_msi_drive <- dep_scores_msi[dep_scores_msi$dataset=="DRIVE",]
-dep_scores_msi_achilles <- dep_scores_msi[dep_scores_msi$dataset=="Achilles",]
+# extract DRIVE and Achilles data separately with classifications
+dep_scores_drive_with_class <- na.omit(data_suppl %>% select(4,5))
+dep_scores_achilles_with_class <- na.omit(data_suppl %>% select(4,6))
 
-df <- rbind(dep_scores_mss, dep_scores_msi)
+my_comparisons <- list(c("MSI","MSS"))
 
-box_plot <- ggplot(df, aes(x = dataset, y= dep_score, fill = CCLE_MSI)) +
+box_plot_drive <- ggplot(dep_scores_drive_with_class, aes(x = CCLE_MSI, y = DRIVE_WRN_D2, fill = CCLE_MSI)) +
   geom_violin() +
-  geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9))
+  ggtitle("Boxplot for DRIVE") +
+  theme(legend.position = "none") +
+  geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
+  stat_compare_means(comparisons = my_comparisons)
 
-box_plot
+box_plot_achilles <- ggplot(dep_scores_achilles_with_class, aes(x = CCLE_MSI, y = CRISPR_WRN_CERES, fill = CCLE_MSI)) +
+  theme(legend.position = "none") +
+  geom_violin() +
+  ggtitle("Boxplot for Achilles") +
+  geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
+  stat_compare_means(comparisons = my_comparisons, method = "t.test")
+
+box_plot_drive + box_plot_achilles
 ```
 
 ## Distribution of randomly picked KD/KO genes
