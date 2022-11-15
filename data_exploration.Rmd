@@ -48,7 +48,7 @@ library(ggpubr)
 We import the data provided by the authors as "Supplementary Table 1" and load it into a dataframe. The dataset contains among others the MSI/MSS classifications. Additionally, we import the "DepMap_18Q4_data.rds" dataset, which contains all dependency scores. 
 ```{r, warning=FALSE}
 # suppress warning message caused by NA values
-data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/Chan/data/"
+data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/data_exploration/data/"
 # read file with MSS/MSI classifications
 data_suppl <- read_excel(paste0(data_dir, "supplementary_table.xlsx"))
 # transform "NA" strings to na values

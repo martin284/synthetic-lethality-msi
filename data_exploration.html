@@ -1579,7 +1579,7 @@ library(ggpubr)</code></pre>
 <h2>Preprocessing of the Data</h2>
 <p>We import the data provided by the authors as “Supplementary Table 1” and load it into a dataframe. The dataset contains among others the MSI/MSS classifications. Additionally, we import the “DepMap_18Q4_data.rds” dataset, which contains all dependency scores.</p>
 <pre class="r"><code># suppress warning message caused by NA values
-data_dir &lt;- &quot;C:/Users/Martin/Documents/Master/Forschungspraktikum/Chan/data/&quot;
+data_dir &lt;- &quot;C:/Users/Martin/Documents/Master/Forschungspraktikum/data_exploration/data/&quot;
 # read file with MSS/MSI classifications
 data_suppl &lt;- read_excel(paste0(data_dir, &quot;supplementary_table.xlsx&quot;))
 # transform &quot;NA&quot; strings to na values
