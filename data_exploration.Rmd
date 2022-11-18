@@ -143,14 +143,14 @@ dep_scores_msi <- data.frame(dep_scores[dep_scores$CCLE_MSI=="MSI",])
 limits <- c(-3,1) # add limits in x axis
 
 plot_mss <- ggplot(data = dep_scores_mss, aes(x=dep_score, fill=dataset)) +
-  geom_histogram(binwidth = 0.2) +
+  geom_histogram(binwidth = 0.2, position = "dodge") +
   coord_cartesian(xlim = limits) +
   xlab("Dependency Score") +
   ggtitle("Dependency Scores in MSS Cells") +
   theme(legend.position="bottom")
 
 plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, fill=dataset)) +
-  geom_histogram(binwidth = 0.2) +
+  geom_histogram(binwidth = 0.2, position = "dodge") +
   coord_cartesian(xlim = limits) +
   xlab("Dependency Score") +
   ggtitle("Dependency Scores in MSI Cells") +
@@ -237,14 +237,14 @@ dep_scores_achilles <- na.omit(dep_scores_achilles)
 
 # create density plot for MSS cells
 plot_mss <- ggplot(data=dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSS",],aes(x=dep_score, fill=KD_KO_gene)) +
-  geom_histogram(binwidth = 0.05) +
+  geom_histogram(binwidth = 0.05, position = "dodge") +
   ggtitle("MSS in Achilles") +
   xlab("Dependency Score") +
   theme(legend.position="bottom")
 
 # create density plot for MSI cells
 plot_msi <- ggplot(data=dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSI",],aes(x=dep_score, fill=KD_KO_gene)) +
-  geom_histogram(binwidth = 0.05) +
+  geom_histogram(binwidth = 0.05, position = "dodge") +
   ggtitle("MSI in Achilles") +
   xlab("Dependency Score") +
   theme(legend.position="bottom")
