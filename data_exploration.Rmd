@@ -165,7 +165,7 @@ plot_mss + plot_msi
 We visualize the the difference between the dependency scores for MSS and MSI cells as density plots.
 ```{r}
 plot_mss <- ggplot(data = dep_scores_mss, aes(x=dep_score, color=dataset)) +
-  geom_density(size=1) +
+  geom_density(size=1, adjust = 0.3) +
   coord_cartesian(xlim = limits) +
   xlab("Dependency Score") +
   ggtitle("Dependency Scores in MSS Cells") +
@@ -173,7 +173,7 @@ plot_mss <- ggplot(data = dep_scores_mss, aes(x=dep_score, color=dataset)) +
   geom_vline(xintercept = 0, linetype=2)
 
 plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, color=dataset)) +
-  geom_density(size=1) +
+  geom_density(size=1, adjust = 0.3) +
   coord_cartesian(xlim = limits) +
   xlab("Dependency Score") +
   ggtitle("Dependency Scores in MSI Cells") +
@@ -275,4 +275,72 @@ box_plot_abhd1 <- ggplot(dep_scores_achilles_abhd1, aes(x = CCLE_MSI, y = dep_sc
   stat_compare_means(comparisons = my_comparisons, method = "t.test")
 
 box_plot_wrn + box_plot_abhd1
+```
+
+## Calculating means
+We calculate the means of MSI and MSS cell lines for every gene and save the result.
+```{r eval=FALSE, include=FALSE}
+# transform matrix to dataframe
+dep_scores_18Q4_achilles_df <- data.frame(dep_scores_18Q4_achilles)
+# add column with CCLE ID
+dep_scores_18Q4_achilles_df <- cbind(CCLE_ID = rownames(dep_scores_18Q4_achilles_df), dep_scores_18Q4_achilles_df)
+rownames(dep_scores_18Q4_achilles_df) <- NULL
+# add CCLE_MSI classification to each cell line
+classifications <- data_suppl %>% select(1,4)
+dep_scores_18Q4_achilles_df <- merge(dep_scores_18Q4_achilles_df, classifications, by="CCLE_ID")
+
+# list of genes
+gene_list <- colnames(dep_scores_18Q4_achilles_df)
+gene_list <- gene_list[-1]
+gene_list <- gene_list[-length(gene_list)]
+
+# create data structure for saving mean dependency scores
+mean_dep_scores <- data.frame(cbind(gene=gene_list, mean_msi=NA, mean_mss=NA))
+
+# iterate through every gene
+for (gene in gene_list) {
+  # calculate mean dependency score of MSI and MSS cells
+  dep_scores <- dep_scores_18Q4_achilles_df %>% select(gene,"CCLE_MSI")
+  colnames(dep_scores) <- c('dep_score','CCLE_MSI')
+  # MSI
+  dep_scores_msi <- dep_scores[dep_scores$CCLE_MSI=="MSI",]$dep_score
+  mean_msi <- mean(dep_scores_msi)
+  mean_dep_scores[mean_dep_scores$gene==gene,]$mean_msi <- mean_msi
+  # MSS
+  dep_scores_mss <- dep_scores[dep_scores$CCLE_MSI=="MSS",]$dep_score
+  mean_mss <- mean(dep_scores_mss)
+  mean_dep_scores[mean_dep_scores$gene==gene,]$mean_mss <- mean_mss
+}
+
+# save data as rds object
+saveRDS(mean_dep_scores, file = "mean_dep_scores.rds")
+```
+
+```{r}
+mean_dep_scores <- readRDS("mean_dep_scores.rds")
+head(mean_dep_scores)
+```
+
+## Calculating P-Values
+We calculate the p-values of MSI and MSS cell lines for every gene and save the result.
+```{r eval=FALSE, include=FALSE}
+# create data structure for saving p-values
+p_values <- data.frame(cbind(gene=gene_list, p_value=NA))
+
+# iterate through every gene
+for (gene in gene_list) {
+  # calculate p-value for every gene
+  dep_scores <- dep_scores_18Q4_achilles_df %>% select(gene,"CCLE_MSI")
+  colnames(dep_scores) <- c('dep_score','CCLE_MSI')
+  test_result <- t.test(dep_scores$dep_score ~ dep_scores$CCLE_MSI, alternative="two.sided", var.equal = FALSE)
+  p_values[p_values$gene==gene,]$p_value <- test_result$p.value
+}
+
+# save data as rds object
+saveRDS(p_values, file = "p_values.rds")
+```
+
+```{r}
+p_values <- readRDS("p_values.rds")
+head(p_values)
 ```
