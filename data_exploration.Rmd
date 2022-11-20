@@ -42,6 +42,7 @@ library(tidyverse)
 library(caret)
 library(reshape2)
 library(ggpubr)
+library(ggrepel)
 ```
 
 ## Preprocessing of the Data
@@ -365,6 +366,13 @@ p_values_log$log <- -log(p_values$p_value)
 # create data structure for mean differences and p-values
 data <- merge(mean_differences, p_values_log, by="gene")
 
-ggplot(data=data, aes(x=difference, y=log)) +
-  geom_point()
+# define labeled genes
+data$to_label <- NA
+data$to_label[data$gene == "WRN"] <- "WRN"
+
+ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
+  geom_point() +
+  xlab('MSI–MSS mean difference') +
+  ylab('-log(P)') +
+  geom_label_repel()
 ```
