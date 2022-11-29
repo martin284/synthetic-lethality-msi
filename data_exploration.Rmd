@@ -343,7 +343,10 @@ saveRDS(p_values, file = "p_values.rds")
 
 ```{r}
 p_values <- readRDS("p_values.rds")
-head(p_values)
+# adjust p-values
+p_adj <- p_values
+p_adj$p_value <- p.adjust(p_values$p_value, method = "hochberg")
+head(p_adj)
 ```
 
 ## Volcano plot
@@ -352,16 +355,16 @@ We plot the mean differences of the dependency scores against the corresponding 
 # calculate mean differences of dependency scores
 mean_dep_scores$mean_msi <- as.numeric(mean_dep_scores$mean_msi)
 mean_dep_scores$mean_mss <- as.numeric(mean_dep_scores$mean_mss)
-p_values$p_value <- as.numeric(p_values$p_value)
+p_adj$p_value <- as.numeric(p_adj$p_value)
 mean_differences <- mean_dep_scores
 mean_differences$mean_msi <- NULL
 mean_differences$mean_mss <- NULL
 mean_differences$difference <- (mean_dep_scores$mean_msi - mean_dep_scores$mean_mss)
 
 # transform p-values
-p_values_log <- p_values
+p_values_log <- p_adj
 p_values_log$p_value <- NULL
-p_values_log$log <- -log(p_values$p_value)
+p_values_log$log <- -log(p_adj$p_value)
 
 # create data structure for mean differences and p-values
 data <- merge(mean_differences, p_values_log, by="gene")
