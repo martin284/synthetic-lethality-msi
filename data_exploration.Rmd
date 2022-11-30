@@ -43,6 +43,8 @@ library(caret)
 library(reshape2)
 library(ggpubr)
 library(ggrepel)
+
+source('C:/Users/Martin/Documents/Master/Forschungspraktikum/data_exploration/WRN_manuscript-master/src/WRN_helpers.R')
 ```
 
 ## Preprocessing of the Data
@@ -374,6 +376,28 @@ data$to_label <- NA
 data$to_label[data$gene == "WRN"] <- "WRN"
 
 ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
+  geom_point() +
+  xlab('MSI–MSS mean difference') +
+  ylab('-log(P)') +
+  geom_label_repel()
+```
+
+## Using Bayes moderated t-stats
+We calculate again the p-values but with Bayes moderated t-stats of the limma package.
+```{r, message = FALSE, results="hide"}
+vec <- data_suppl$CCLE_MSI %>% set_names(data_suppl$CCLE_ID) # data from suppl
+mat <- dep_scores_18Q4_achilles 
+intersect_cell_lines <- intersect(rownames(mat), names(vec))
+Achilles_res <- run_lm_stats_limma(mat[intersect_cell_lines,], vec[intersect_cell_lines], covars = NULL, weights = NULL, target_type = 'gene')
+
+# add column with transformed p-values
+Achilles_res$log <- -log(Achilles_res$q.value)
+
+# define labeled genes
+Achilles_res$to_label <- NA
+Achilles_res$to_label[Achilles_res$gene == "WRN"] <- "WRN"
+
+ggplot(data=Achilles_res, aes(x=EffectSize, y=log, label=to_label)) +
   geom_point() +
   xlab('MSI–MSS mean difference') +
   ylab('-log(P)') +
