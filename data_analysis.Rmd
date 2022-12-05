@@ -1,6 +1,6 @@
 ---
-title: "Data Exploration"
-subtitle: "Data Exploration of 'WRN helicase is a synthetic lethal target in
+title: "Data Exploration and Data Analysis"
+subtitle: "Data Exploration and Implementation of the workflow in 'WRN helicase is a synthetic lethal target in
 microsatellite unstable cancers'"
 author: "Martin Brand"
 date: "`r format(Sys.time(), '%B %e, %Y')`"
@@ -44,14 +44,14 @@ library(reshape2)
 library(ggpubr)
 library(ggrepel)
 
-source('C:/Users/Martin/Documents/Master/Forschungspraktikum/data_exploration/WRN_manuscript-master/src/WRN_helpers.R')
+source('C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencies_msi/WRN_manuscript-master/src/WRN_helpers.R')
 ```
 
 ## Preprocessing of the Data
 We import the data provided by the authors as "Supplementary Table 1" and load it into a dataframe. The dataset contains among others the MSI/MSS classifications. Additionally, we import the "DepMap_18Q4_data.rds" dataset, which contains all dependency scores. 
 ```{r, warning=FALSE}
 # suppress warning message caused by NA values
-data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/data_exploration/data/"
+data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencies_msi/data/"
 # read file with MSS/MSI classifications
 data_suppl <- read_excel(paste0(data_dir, "supplementary_table.xlsx"))
 # transform "NA" strings to na values
