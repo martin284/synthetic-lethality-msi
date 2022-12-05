@@ -44,6 +44,7 @@ library(caret)
 library(reshape2)
 library(ggpubr)
 library(ggrepel)
+library("ggVennDiagram")
 
 source('C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencies_msi/WRN_manuscript-master/src/WRN_helpers.R')
 ```
@@ -55,7 +56,7 @@ I import the data provided by the authors as "Supplementary Table 1". The datase
 data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencies_msi/data/"
 # read file with MSS/MSI classifications
 data_suppl <- read_excel(paste0(data_dir, "supplementary_table.xlsx"))
-# transform "NA" strings to na values
+# transform "NA" strings to NA values
 data_suppl[data_suppl=="NA"] <- NA 
 # transform numbers saved as strings to numbers
 data_suppl <- transform(data_suppl, DRIVE_WRN_D2=as.numeric(DRIVE_WRN_D2), CRISPR_WRN_CERES = as.numeric(CRISPR_WRN_CERES), avg_WRN_dep=as.numeric(avg_WRN_dep))
@@ -72,7 +73,7 @@ dep_scores_18Q4_achilles <- data_18Q4[["CRISPR"]]
 ```
 
 ## Visualization of Classifications
-We visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE datasets together and separately. We see that the number of MSS cell lines is much higher than the number of MSI cell lines.
+I visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE datasets together and separately. We see that the number of MSS cell lines is many times higher than the number of MSI cell lines.
 ```{r}
 # count rows of MSI and MSS classified cell lines
 counts_class <- data.frame(table(data_suppl$CCLE_MSI))
@@ -107,6 +108,17 @@ bar_chart_achilles <- ggplot(data=counts_class_achilles, aes(x=Var1, y=Freq, fil
   coord_cartesian(ylim = limits)
 
 bar_chart_total + bar_chart_drive + bar_chart_achilles
+```
+
+In the Figure above, we see that the datasets overlap. To determine the size of the overlap, I plot the datasets in a Venn diagram.
+```{r}
+DRIVE <- data_suppl[!is.na(data_suppl$DRIVE_WRN_D2),]$CCLE_ID
+Achilles <- data_suppl[!is.na(data_suppl$CRISPR_WRN_CERES),]$CCLE_ID
+all <- list(DRIVE=DRIVE, Achilles=Achilles)
+ggVennDiagram(all, label_alpha = 0) +
+  ggplot2::scale_fill_gradient(low="lightblue",high = "yellow") +
+  theme(legend.position = "none", plot.title = element_text(hjust = 0.5)) +
+  ggtitle('Cell lines in Achilles and DRIVE dataset')
 ```
 
 ## Correlation of Achilles and DRIVE dataset
