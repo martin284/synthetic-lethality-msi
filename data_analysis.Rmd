@@ -1,6 +1,6 @@
 ---
 title: "Data Exploration and Data Analysis"
-subtitle: "Data Exploration and Implementation of the workflow in 'WRN helicase is a synthetic lethal target in
+subtitle: "Data Exploration and Implementation of the Workflow in 'WRN helicase is a synthetic lethal target in
 microsatellite unstable cancers'"
 author: "Martin Brand"
 date: "`r format(Sys.time(), '%B %e, %Y')`"
@@ -28,6 +28,7 @@ header-includes:
 - \usepackage{placeins}
 geometry: margin=1in
 fontsize: 18pt
+bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -48,7 +49,7 @@ source('C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencie
 ```
 
 ## Preprocessing of the Data
-We import the data provided by the authors as "Supplementary Table 1" and load it into a dataframe. The dataset contains among others the MSI/MSS classifications. Additionally, we import the "DepMap_18Q4_data.rds" dataset, which contains all dependency scores. 
+I import the data provided by the authors as "Supplementary Table 1". The dataset contains, among other things, the MSI/MSS classifications and the dependency scores for WRN. In addition, I import the dataset "DepMap_18Q4_data.rds", which contains all dependency scores from the project Achilles and prject DRIVE. The weblinks can all be found in @chan.
 ```{r, warning=FALSE}
 # suppress warning message caused by NA values
 data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencies_msi/data/"
