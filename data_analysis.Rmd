@@ -304,81 +304,51 @@ rownames(dep_scores_18Q4_achilles_df) <- NULL
 classifications <- data_suppl %>% select(1,4)
 dep_scores_18Q4_achilles_df <- merge(dep_scores_18Q4_achilles_df, classifications, by="CCLE_ID")
 
-# list of genes
-gene_list <- colnames(dep_scores_18Q4_achilles_df)
-gene_list <- gene_list[-1]
-gene_list <- gene_list[-length(gene_list)]
-
-# create data structure for saving mean dependency scores
-mean_dep_scores <- data.frame(cbind(gene=gene_list, mean_msi=NA, mean_mss=NA))
-
-```
-
-```{r eval=FALSE, include=FALSE}
-# iterate through every gene
-for (gene in gene_list) {
-  # calculate mean dependency score of MSI and MSS cells
-  dep_scores <- dep_scores_18Q4_achilles_df %>% select(gene,"CCLE_MSI")
-  colnames(dep_scores) <- c('dep_score','CCLE_MSI')
-  # MSI
-  dep_scores_msi <- dep_scores[dep_scores$CCLE_MSI=="MSI",]$dep_score
-  mean_msi <- mean(dep_scores_msi)
-  mean_dep_scores[mean_dep_scores$gene==gene,]$mean_msi <- mean_msi
-  # MSS
-  dep_scores_mss <- dep_scores[dep_scores$CCLE_MSI=="MSS",]$dep_score
-  mean_mss <- mean(dep_scores_mss)
-  mean_dep_scores[mean_dep_scores$gene==gene,]$mean_mss <- mean_mss
+calculate_means <- function(col,condition) {
+  mean <- mean(as.numeric(col[dep_scores_18Q4_achilles_df$CCLE_MSI==condition]))
+  return(mean)
 }
 
-# save data as rds object
-saveRDS(mean_dep_scores, file = "mean_dep_scores.rds")
-```
+only_dep_scores <- dep_scores_18Q4_achilles_df[,-c(1,ncol(dep_scores_18Q4_achilles_df))]
 
-```{r}
-mean_dep_scores <- readRDS("mean_dep_scores.rds")
+mean_msi <- apply(only_dep_scores, 2, calculate_means, condition='MSI')
+mean_msi_df <- data.frame(mean_msi)
+mean_mss <- apply(only_dep_scores, 2, calculate_means, condition='MSS')
+mean_mss_df <- data.frame(mean_mss)
+mean_dep_scores <- mean_msi_df
+mean_dep_scores$mean_mss <- mean_mss_df$mean_mss
+mean_dep_scores <- cbind.data.frame(gene=rownames(mean_dep_scores), mean_dep_scores)
+rownames(mean_dep_scores) <- NULL
 head(mean_dep_scores)
 ```
 
 ## Calculating P-Values
 We calculate the p-values of MSI and MSS cell lines for every gene and save the result.
-```{r eval=FALSE, include=FALSE}
-# create data structure for saving p-values
-p_values <- data.frame(cbind(gene=gene_list, p_value=NA))
-
-# iterate through every gene
-for (gene in gene_list) {
-  # calculate p-value for every gene
-  dep_scores <- dep_scores_18Q4_achilles_df %>% select(gene,"CCLE_MSI")
-  colnames(dep_scores) <- c('dep_score','CCLE_MSI')
-  test_result <- t.test(dep_scores$dep_score ~ dep_scores$CCLE_MSI, alternative="two.sided", var.equal = FALSE)
-  p_values[p_values$gene==gene,]$p_value <- test_result$p.value
+```{r}
+calculate_p_values <- function(col) {
+  test_result <- t.test(col ~ dep_scores_18Q4_achilles_df$CCLE_MSI, alternative="two.sided", var.equal = FALSE)
+  return(test_result$p.value)
 }
 
-# save data as rds object
-saveRDS(p_values, file = "p_values.rds")
+p_values <- data.frame(apply(only_dep_scores, 2, calculate_p_values))
+p_values <- cbind.data.frame(rownames(p_values),p_values)
+rownames(p_values) <- NULL
+colnames(p_values) <- c("gene","p_value")
+
+head(p_values)
 ```
 
-```{r}
-p_values <- readRDS("p_values.rds")
-# adjust p-values
-p_adj <- p_values
-p_adj$p_value <- p.adjust(p_values$p_value, method = "hochberg")
-head(p_adj)
-```
-
-## Volcano plot
+## Volcano Plot Using Students t-Test
 We plot the mean differences of the dependency scores against the corresponding p-values and get a volcano plot.
 ```{r}
-# calculate mean differences of dependency scores
-mean_dep_scores$mean_msi <- as.numeric(mean_dep_scores$mean_msi)
-mean_dep_scores$mean_mss <- as.numeric(mean_dep_scores$mean_mss)
-p_adj$p_value <- as.numeric(p_adj$p_value)
 mean_differences <- mean_dep_scores
 mean_differences$mean_msi <- NULL
 mean_differences$mean_mss <- NULL
 mean_differences$difference <- (mean_dep_scores$mean_msi - mean_dep_scores$mean_mss)
 
 # transform p-values
+p_adj <- p_values
+p_adj$p_value <- p.adjust(p_values$p_value, method = "hochberg")
 p_values_log <- p_adj
 p_values_log$p_value <- NULL
 p_values_log$log <- -log(p_adj$p_value)
@@ -397,7 +367,7 @@ ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
   geom_label_repel()
 ```
 
-## Using Bayes moderated t-stats
+## Volcano Plot Using Bayes moderated t-stats
 I calculate again the p-values but with Bayes moderated t-stats using limma [@limma].
 ```{r}
 vec <- dep_scores_18Q4_achilles_df$CCLE_MSI
