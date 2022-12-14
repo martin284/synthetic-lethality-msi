@@ -50,7 +50,7 @@ library(matrixTests)
 ```
 
 ## Preprocessing of the Data
-I import the data provided by the authors as "Supplementary Table 1". The dataset contains, among other things, the MSI/MSS classifications and the dependency scores for WRN. In addition, I import the dataset "DepMap_18Q4_data.rds", which contains all dependency scores from the project Achilles and prject DRIVE. The weblinks can all be found in @chan.
+I import the data provided by the authors as "Supplementary Table 1". The data set contains, among other things, the MSI/MSS classifications and the dependency scores for WRN. In addition, I import the data set "DepMap_18Q4_data.rds", which contains all dependency scores from the project Achilles and project DRIVE. The weblinks can all be found in @chan.
 ```{r, warning=FALSE}
 # suppress warning message caused by NA values
 data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencies_msi/data/"
@@ -73,7 +73,7 @@ dep_scores_18Q4_achilles <- data_18Q4[["CRISPR"]]
 ```
 
 ## Visualization of Classifications
-I visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE datasets together and separately. We see that the number of MSS cell lines is many times higher than the number of MSI cell lines.
+I visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE data sets together and separately. We see that the number of MSS cell lines is many times higher than the number of MSI cell lines.
 ```{r}
 # count rows of MSI and MSS classified cell lines
 counts_class <- data.frame(table(data_suppl$CCLE_MSI))
@@ -110,7 +110,7 @@ bar_chart_achilles <- ggplot(data=counts_class_achilles, aes(x=Var1, y=Freq, fil
 bar_chart_total + bar_chart_drive + bar_chart_achilles
 ```
 
-In the Figure above, we see that the datasets overlap. To determine the size of the overlap, I plot the datasets in a Venn diagram.
+In the Figure above, we see that the datasets overlap. To determine the size of the overlap, I plot the data sets in a Venn diagram.
 ```{r}
 DRIVE <- data_suppl[!is.na(data_suppl$DRIVE_WRN_D2),]$CCLE_ID
 Achilles <- data_suppl[!is.na(data_suppl$CRISPR_WRN_CERES),]$CCLE_ID
@@ -118,33 +118,24 @@ all <- list(DRIVE=DRIVE, Achilles=Achilles)
 ggVennDiagram(all, label_alpha = 0) +
   ggplot2::scale_fill_gradient(low="lightblue",high = "yellow") +
   theme(legend.position = "none", plot.title = element_text(hjust = 0.5)) +
-  ggtitle('Cell lines in Achilles and DRIVE dataset')
+  ggtitle('Cell Lines in Achilles and DRIVE Dataset')
 ```
 
 ## Correlation of Achilles and DRIVE dataset
+For quality control, I plot the dependency scores of WRN in the two data sets against each other. There is a significant correlation, but not as high as I would have expected. For this reason, I decided to analyse the two data sets separately instead of using the mean values. 
 ```{r}
 # extract dependency scores
 dep_scores <- data_suppl %>% select(5,6)
-# remove rows with na
+# remove rows with NA
 dep_scores <- na.omit(dep_scores)
-
-# remove outliers
-outliers_achilles <- boxplot(dep_scores$CRISPR_WRN_CERES, plot=FALSE)$out
-cleaned_dep_scores<- dep_scores[-which(dep_scores$CRISPR_WRN_CERES %in% outliers_achilles),]
-outliers_drive <- boxplot(cleaned_dep_scores$DRIVE_WRN_D2, plot=FALSE)$out
-cleaned_dep_scores<- cleaned_dep_scores[-which(cleaned_dep_scores$DRIVE_WRN_D2 %in% outliers_drive),]
-# create scatter plot with and without outliers
-corr_plot <- ggplot(dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
+# create scatter plot
+ggplot(dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
   geom_point() + stat_cor() +
   ggtitle('Complete Correlation Plot')
-cleaned_corr_plot <- ggplot(cleaned_dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
-  geom_point() + stat_cor() +
-  ggtitle('Zooming into Noise')
-corr_plot + cleaned_corr_plot
 ```
 
 ## Histograms
-We visualize the the difference between the dependency scores for MSS and MSI cells as histograms.
+I plot the distributions of the dependency scores for WRN in MSS and MSI cells separately as histograms. The dependency scores in MSI cell lines show a significantly greater variance.
 ```{r}
 # create MSI/MSS specific subsets with dependency scores
 dep_scores <- data_suppl %>% select(1,4,5,6)
@@ -173,12 +164,10 @@ plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, fill=dataset)) +
   theme(legend.position="bottom")
 
 plot_mss + plot_msi
-
-# the offset is different in DRIVE and Achilles... why?
 ```
 
 ## Density Plots
-We visualize the the difference between the dependency scores for MSS and MSI cells as density plots.
+For better understanding, I repeat this step with density plots.
 ```{r}
 plot_mss <- ggplot(data = dep_scores_mss, aes(x=dep_score, color=dataset)) +
   geom_density(linewidth=1, adjust = 0.3) +
@@ -200,7 +189,7 @@ plot_mss + plot_msi
 ```
 
 ## Box Plots
-We visualize the the difference between the dependency scores for MSS and MSI cells as box plots.
+For better understanding, I repeat this step with box plots.
 ```{r, echo=FALSE, message=FALSE, results="hide"}
 # extract DRIVE and Achilles data separately with classifications
 dep_scores_drive_with_class <- na.omit(data_suppl %>% select(4,5))
@@ -225,8 +214,8 @@ box_plot_achilles <- ggplot(dep_scores_achilles_with_class, aes(x = CCLE_MSI, y 
 box_plot_drive + box_plot_achilles
 ```
 
-## Comparing distribution of randomly picked KD/KO genes in Achilles dataset
-For comparison we plot the distribution of randomly picked KO/KD genes.
+## Comparing WRN and ANHD1 Distribution
+For comparison, I plot the distribution of dependency scores of a randomly selected KO gene in the Achilles dataset as histograms. The dependency scores of WRN are generally more broadly distributed. When looking at MSI cell lines, this observation becomes much clearer.
 ```{r}
 # extract dependency scores for ABHD1
 abhd1_dep_scores_achilles <- data.frame(dep_scores_18Q4_achilles[,"ABHD1"])
@@ -268,8 +257,7 @@ plot_msi <- ggplot(data=dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSI",
 # plot results
 plot_mss + plot_msi
 ```
-
-## Comparing p-values of different genes in Achilles dataset
+I repeat the procedure and additionally calculate the p-values for comparison. The p-value for WRN is very significant, whereas the p-value for ABHD1 is not.
 ```{r}
 dep_scores_achilles_wrn <- dep_scores_achilles[dep_scores_achilles$KD_KO_gene=="WRN",]
 dep_scores_achilles_abhd1 <- dep_scores_achilles[dep_scores_achilles$KD_KO_gene=="ABHD1",]
@@ -294,7 +282,7 @@ box_plot_wrn + box_plot_abhd1
 ```
 
 # Calculating means
-We calculate the means of the dependency sores for MSI and MSS cell lines for every gene.
+I calculate the means of the dependency sores for MSI and MSS cell lines for every gene.
 ```{r}
 # transform matrix to dataframe
 dep_scores_18Q4_achilles_df <- data.frame(dep_scores_18Q4_achilles)
