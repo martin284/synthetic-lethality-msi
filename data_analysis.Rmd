@@ -46,6 +46,7 @@ library(ggpubr)
 library(ggrepel)
 library(ggVennDiagram)
 library(limma)
+library(matrixTests)
 ```
 
 ## Preprocessing of the Data
@@ -293,6 +294,7 @@ box_plot_wrn + box_plot_abhd1
 ```
 
 # Calculating means
+We calculate the means of the dependency sores for MSI and MSS cell lines for every gene.
 ```{r}
 # transform matrix to dataframe
 dep_scores_18Q4_achilles_df <- data.frame(dep_scores_18Q4_achilles)
@@ -324,24 +326,18 @@ head(mean_dep_scores)
 ```
 
 
-## Calculating P-Values Using Students t-Test
-We calculate the p-values of MSI and MSS cell lines for every gene and save the result.
+## Calculating P-Values Using Welch-Test
+We calculate the p-values using the Welch-Test of the dependency scores of MSI and MSS cell lines for every gene.
 ```{r}
-calculate_p_values_t <- function(col) {
-  test_result <- t.test(col ~ dep_scores_18Q4_achilles_df$CCLE_MSI, alternative="two.sided", var.equal = FALSE)
-  return(test_result$p.value)
-}
-
-only_dep_scores <- dep_scores_18Q4_achilles_df[,-c(1,ncol(dep_scores_18Q4_achilles_df))]
-p_values <- data.frame(apply(only_dep_scores, 2, calculate_p_values_t))
-p_values <- cbind.data.frame(rownames(p_values),p_values)
-rownames(p_values) <- NULL
-colnames(p_values) <- c("gene","p_value")
-
-head(p_values)
+res_welch <- col_t_welch(dep_scores_18Q4_achilles_msi, dep_scores_18Q4_achilles_mss)
+p_values_welch <- data.frame(matrix(NA, nrow = nrow(res_welch), ncol = 2))
+colnames(p_values_welch) <- c('gene','p_value')
+p_values_welch$gene <- rownames(res_welch)
+p_values_welch$p_value <- res_welch$pvalue
+head(p_values_welch)
 ```
 
-## Volcano Plot Using Students t-Test
+## Volcano Plot Using Welch-Test
 We plot the mean differences of the dependency scores against the corresponding p-values and get a volcano plot.
 ```{r}
 mean_differences <- mean_dep_scores
@@ -350,14 +346,14 @@ mean_differences$mean_mss <- NULL
 mean_differences$difference <- (mean_dep_scores$mean_msi - mean_dep_scores$mean_mss)
 
 # transform p-values
-p_adj <- p_values
-p_adj$p_value <- p.adjust(p_values$p_value, method = "hochberg")
-p_values_log <- p_adj
-p_values_log$p_value <- NULL
-p_values_log$log <- -log(p_adj$p_value)
+p_adj_welch <- p_values_welch
+p_adj_welch$p_value <- p.adjust(p_values_welch$p_value, method = "hochberg")
+p_values_welch_log <- p_adj_welch
+p_values_welch_log$p_value <- NULL
+p_values_welch_log$log <- -log(p_adj_welch$p_value)
 
 # create data structure for mean differences and p-values
-data <- merge(mean_differences, p_values_log, by="gene")
+data <- merge(mean_differences, p_values_welch_log, by="gene")
 
 # define labeled genes
 data$to_label <- ""
@@ -371,33 +367,28 @@ ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
 ```
 
 ## Calculating P-Values Using Wilcoxon Test
-We calculate the p-values of MSI and MSS cell lines for every gene and save the result.
+We calculate the p-values using the Wilcoxon-Test of the dependency scores of MSI and MSS cell lines for every gene.
 ```{r}
-calculate_p_values_wilcox <- function(col) {
-  test_result <- wilcox.test(col ~ dep_scores_18Q4_achilles_df$CCLE_MSI, alternative="two.sided", var.equal = FALSE)
-  return(test_result$p.value)
-}
-
-p_values <- data.frame(apply(only_dep_scores, 2, calculate_p_values_wilcox))
-p_values <- cbind.data.frame(rownames(p_values),p_values)
-rownames(p_values) <- NULL
-colnames(p_values) <- c("gene","p_value")
-
-head(p_values)
+res_wilc <- col_wilcoxon_twosample(dep_scores_18Q4_achilles_msi, dep_scores_18Q4_achilles_mss)
+p_values_wilc <- data.frame(matrix(NA, nrow = nrow(res_wilc), ncol = 2))
+colnames(p_values_wilc) <- c('gene','p_value')
+p_values_wilc$gene <- rownames(res_wilc)
+p_values_wilc$p_value <- res_wilc$pvalue
+head(p_values_wilc)
 ```
 
 ## Volcano Plot Using Wilcoxon Test
 We plot the mean differences of the dependency scores against the corresponding p-values and get a volcano plot.
 ```{r}
 # transform p-values
-p_adj <- p_values
-p_adj$p_value <- p.adjust(p_values$p_value, method = "hochberg")
-p_values_log <- p_adj
-p_values_log$p_value <- NULL
-p_values_log$log <- -log(p_adj$p_value)
+p_adj_wilc <- p_values_wilc
+p_adj_wilc$p_value <- p.adjust(p_values_wilc$p_value, method = "hochberg")
+p_values_wilc_log <- p_adj_wilc
+p_values_wilc_log$p_value <- NULL
+p_values_wilc_log$log <- -log(p_adj_wilc$p_value)
 
 # create data structure for mean differences and p-values
-data <- merge(mean_differences, p_values_log, by="gene")
+data <- merge(mean_differences, p_values_wilc_log, by="gene")
 
 # define labeled genes
 data$to_label <- ""
@@ -411,7 +402,7 @@ ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
 ```
 
 ## Volcano Plot Using Bayes moderated t-stats
-I calculate again the p-values but with Bayes moderated t-stats using limma [@limma].
+We calculate again the p-values but with Bayes moderated t-stats using limma [@limma] and plot them against the corresponding log2FoldChanges.
 ```{r}
 vec <- dep_scores_18Q4_achilles_df$CCLE_MSI
 mat <- dep_scores_18Q4_achilles_df
