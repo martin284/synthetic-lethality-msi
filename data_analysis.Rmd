@@ -322,15 +322,15 @@ rownames(mean_dep_scores) <- NULL
 head(mean_dep_scores)
 ```
 
-## Calculating P-Values
+## Calculating P-Values Using Students t-Test
 We calculate the p-values of MSI and MSS cell lines for every gene and save the result.
 ```{r}
-calculate_p_values <- function(col) {
+calculate_p_values_t <- function(col) {
   test_result <- t.test(col ~ dep_scores_18Q4_achilles_df$CCLE_MSI, alternative="two.sided", var.equal = FALSE)
   return(test_result$p.value)
 }
 
-p_values <- data.frame(apply(only_dep_scores, 2, calculate_p_values))
+p_values <- data.frame(apply(only_dep_scores, 2, calculate_p_values_t))
 p_values <- cbind.data.frame(rownames(p_values),p_values)
 rownames(p_values) <- NULL
 colnames(p_values) <- c("gene","p_value")
@@ -346,6 +346,46 @@ mean_differences$mean_msi <- NULL
 mean_differences$mean_mss <- NULL
 mean_differences$difference <- (mean_dep_scores$mean_msi - mean_dep_scores$mean_mss)
 
+# transform p-values
+p_adj <- p_values
+p_adj$p_value <- p.adjust(p_values$p_value, method = "hochberg")
+p_values_log <- p_adj
+p_values_log$p_value <- NULL
+p_values_log$log <- -log(p_adj$p_value)
+
+# create data structure for mean differences and p-values
+data <- merge(mean_differences, p_values_log, by="gene")
+
+# define labeled genes
+data$to_label <- ""
+data$to_label[data$gene == "WRN"] <- "WRN"
+
+ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
+  geom_point() +
+  xlab('MSI–MSS mean difference') +
+  ylab('-log(P)') +
+  geom_label_repel()
+```
+
+## Calculating P-Values Using Wilcoxon Test
+We calculate the p-values of MSI and MSS cell lines for every gene and save the result.
+```{r}
+calculate_p_values_wilcox <- function(col) {
+  test_result <- wilcox.test(col ~ dep_scores_18Q4_achilles_df$CCLE_MSI, alternative="two.sided", var.equal = FALSE)
+  return(test_result$p.value)
+}
+
+p_values <- data.frame(apply(only_dep_scores, 2, calculate_p_values_wilcox))
+p_values <- cbind.data.frame(rownames(p_values),p_values)
+rownames(p_values) <- NULL
+colnames(p_values) <- c("gene","p_value")
+
+head(p_values)
+```
+
+## Volcano Plot Using Wilcoxon Test
+We plot the mean differences of the dependency scores against the corresponding p-values and get a volcano plot.
+```{r}
 # transform p-values
 p_adj <- p_values
 p_adj$p_value <- p.adjust(p_values$p_value, method = "hochberg")
