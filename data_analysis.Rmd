@@ -384,8 +384,9 @@ ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
 ```
 
 ## Volcano Plot using Bayes moderated t-stats
-Now I calculate the p-values using Bayes moderated t-stats in limma [@limma] as in @chan and plot them against the corresponding log2FoldChanges. With this recommended test method, the result is even more reliable.
+Now I calculate the p-values using Bayes moderated t-stats from limma [@limma] as in @chan and plot them against the corresponding mean differences. With this recommended test method, the result is even more reliable.
 ```{r}
+# calculate p-values
 vec <- dep_scores_18Q4_achilles_df$CCLE_MSI
 mat <- dep_scores_18Q4_achilles_df
 mat$CCLE_MSI <- NULL
@@ -396,13 +397,26 @@ mat <- as.matrix(mat)
 design <- model.matrix(~vec)
 fit <- lmFit(t(mat),design=design)
 fit <- eBayes(fit = fit)
-results <- topTable(fit = fit, n=Inf, coef = 2)
+results_bayes <- topTable(fit = fit, n=Inf, coef = 2, sort.by = "none")
+
+p_adj_bayes <- data.frame(matrix(NA, nrow = nrow(results_bayes), ncol = 2))
+colnames(p_adj_bayes) <- c('gene','p_adj')
+p_adj_bayes$gene <- rownames(results_bayes)
+p_adj_bayes$p_adj <- results_bayes$adj.P.Val
+
+# transform p-values
+p_adj_bayes_log <- p_adj_bayes
+p_adj_bayes_log$p_adj <- NULL
+p_adj_bayes_log$log <- -log(p_adj_bayes$p_adj)
+
+# create data structure for mean differences and p-values
+data_bayes <- merge(mean_differences, p_adj_bayes_log, by="gene")
 
 # define labeled genes
-results$to_label <- ""
-results$to_label[rownames(results) == "WRN"] <- "WRN"
+data_bayes$to_label <- ""
+data_bayes$to_label[data_bayes$gene == "WRN"] <- "WRN"
 
-ggplot(data=results, aes(x=logFC,y=-log(adj.P.Val), label=to_label)) +
+ggplot(data=data_bayes, aes(x=difference,y=log, label=to_label)) +
   geom_point() +
   xlab('logFoldChange') +
   ylab('-log(P_adj)') +
