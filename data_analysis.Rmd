@@ -262,21 +262,19 @@ I repeat the procedure and additionally calculate the p-values for comparison. T
 dep_scores_achilles_wrn <- dep_scores_achilles[dep_scores_achilles$KD_KO_gene=="WRN",]
 dep_scores_achilles_abhd1 <- dep_scores_achilles[dep_scores_achilles$KD_KO_gene=="ABHD1",]
 
-my_comparisons <- list(c("MSI","MSS"))
-
 box_plot_wrn <- ggplot(dep_scores_achilles_wrn, aes(x = CCLE_MSI, y = dep_score, fill = CCLE_MSI)) +
   geom_violin() +
   ggtitle("Boxplot for WRN") +
   theme(legend.position = "none") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
-  stat_compare_means(comparisons = my_comparisons, method = "t.test")
-  
+  stat_compare_means(method = "t.test")
+
 box_plot_abhd1 <- ggplot(dep_scores_achilles_abhd1, aes(x = CCLE_MSI, y = dep_score, fill = CCLE_MSI)) +
   theme(legend.position = "none") +
   geom_violin() +
   ggtitle("Boxplot for ABHD1") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
-  stat_compare_means(comparisons = my_comparisons, method = "t.test")
+  stat_compare_means(method = "t.test")
 
 box_plot_wrn + box_plot_abhd1
 ```
@@ -402,7 +400,7 @@ mat <- as.matrix(mat)
 design <- model.matrix(~vec)
 fit <- lmFit(t(mat),design=design)
 fit <- eBayes(fit = fit)
-results <- topTable(fit = fit, n=Inf)
+results <- topTable(fit = fit, n=Inf, coef = 2)
 
 # define labeled genes
 results$to_label <- ""
