@@ -121,7 +121,7 @@ ggVennDiagram(all, label_alpha = 0) +
   ggtitle('Cell Lines in Achilles and DRIVE Dataset')
 ```
 
-## Correlation of Achilles and DRIVE dataset
+## Correlation of Achilles and DRIVE Dataset
 For quality control, I plot the dependency scores of WRN in the two data sets against each other. There is a significant correlation, but not as high as I would have expected. For this reason, I decided to analyse the two data sets separately instead of using the mean values. 
 ```{r}
 # extract dependency scores
@@ -134,7 +134,7 @@ ggplot(dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
   ggtitle('Complete Correlation Plot')
 ```
 
-## Histograms
+## Dependency Score Distribution in MSI and MSS Cell Lines
 I plot the distributions of the dependency scores for WRN in MSS and MSI cells separately as histograms. The dependency scores in MSI cell lines show a significantly greater variance.
 ```{r}
 # create MSI/MSS specific subsets with dependency scores
@@ -166,7 +166,6 @@ plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, fill=dataset)) +
 plot_mss + plot_msi
 ```
 
-## Density Plots
 For better understanding, I repeat this step with density plots.
 ```{r}
 plot_mss <- ggplot(data = dep_scores_mss, aes(x=dep_score, color=dataset)) +
@@ -188,34 +187,31 @@ plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, color=dataset)) +
 plot_mss + plot_msi
 ```
 
-## Box Plots
-For better understanding, I repeat this step with box plots.
+For better understanding, I repeat this step with box plots and additionally calculate the p-values that are significantly low for both datasets.
 ```{r, echo=FALSE, message=FALSE, results="hide"}
 # extract DRIVE and Achilles data separately with classifications
 dep_scores_drive_with_class <- na.omit(data_suppl %>% select(4,5))
 dep_scores_achilles_with_class <- na.omit(data_suppl %>% select(4,6))
-
-my_comparisons <- list(c("MSI","MSS"))
 
 box_plot_drive <- ggplot(dep_scores_drive_with_class, aes(x = CCLE_MSI, y = DRIVE_WRN_D2, fill = CCLE_MSI)) +
   geom_violin() +
   ggtitle("Boxplot for DRIVE") +
   theme(legend.position = "none") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
-  stat_compare_means(comparisons = my_comparisons, method = "t.test")
+  stat_compare_means(method = "wilcox.test")
 
 box_plot_achilles <- ggplot(dep_scores_achilles_with_class, aes(x = CCLE_MSI, y = CRISPR_WRN_CERES, fill = CCLE_MSI)) +
   theme(legend.position = "none") +
   geom_violin() +
   ggtitle("Boxplot for Achilles") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
-  stat_compare_means(comparisons = my_comparisons, method = "t.test")
+  stat_compare_means(method = "wilcox.test")
 
 box_plot_drive + box_plot_achilles
 ```
 
-## Comparing WRN and ANHD1 Distribution
-For comparison, I plot the distribution of dependency scores of a randomly selected KO gene in the Achilles dataset as histograms. The dependency scores of WRN are generally more broadly distributed. When looking at MSI cell lines, this observation becomes much clearer.
+## Comparing WRN and ABHD1 Distribution
+For comparison, I plot the distributions of dependency scores of a randomly selected KO gene and the WRN gene in the Achilles dataset as histograms. The dependency scores of WRN are generally more broadly distributed. When looking at MSI cell lines, the difference becomes much clearer.
 ```{r}
 # extract dependency scores for ABHD1
 abhd1_dep_scores_achilles <- data.frame(dep_scores_18Q4_achilles[,"ABHD1"])
@@ -257,7 +253,7 @@ plot_msi <- ggplot(data=dep_scores_achilles[dep_scores_achilles$CCLE_MSI=="MSI",
 # plot results
 plot_mss + plot_msi
 ```
-I repeat the procedure and additionally calculate the p-values for comparison. The p-value for WRN is very significant, whereas the p-value for ABHD1 is not.
+I repeat the procedure using box plots and additionally calculate the p-values for comparison. The p-value for WRN is very significant, whereas the p-value for ABHD1 is not.
 ```{r}
 dep_scores_achilles_wrn <- dep_scores_achilles[dep_scores_achilles$KD_KO_gene=="WRN",]
 dep_scores_achilles_abhd1 <- dep_scores_achilles[dep_scores_achilles$KD_KO_gene=="ABHD1",]
@@ -267,20 +263,20 @@ box_plot_wrn <- ggplot(dep_scores_achilles_wrn, aes(x = CCLE_MSI, y = dep_score,
   ggtitle("Boxplot for WRN") +
   theme(legend.position = "none") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
-  stat_compare_means(method = "t.test")
+  stat_compare_means(method = "wilcox.test")
 
 box_plot_abhd1 <- ggplot(dep_scores_achilles_abhd1, aes(x = CCLE_MSI, y = dep_score, fill = CCLE_MSI)) +
   theme(legend.position = "none") +
   geom_violin() +
   ggtitle("Boxplot for ABHD1") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
-  stat_compare_means(method = "t.test")
+  stat_compare_means(method = "wilcox.test")
 
 box_plot_wrn + box_plot_abhd1
 ```
 
-# Calculating means
-I calculate the means of the dependency sores for MSI and MSS cell lines for every gene.
+# Calculating Mean Dependency Scores
+To reproduce the workflow in @chan, I calculate the mean values of the dependency sores for MSI and MSS cell lines separately for every gene.
 ```{r}
 # transform matrix to dataframe
 dep_scores_18Q4_achilles_df <- data.frame(dep_scores_18Q4_achilles)
@@ -312,8 +308,8 @@ head(mean_dep_scores)
 ```
 
 
-## Calculating P-Values Using Welch-Test
-We calculate the p-values using the Welch-Test of the dependency scores of MSI and MSS cell lines for every gene.
+## Calculating P-Values using Welch-Test
+I calculate the p-values of the dependency scores for MSI and MSS cell lines for every gene using the Welch-Test. (Actually, the Welch-Test is not suitable for this data, but I do it for comparison.)
 ```{r}
 res_welch <- col_t_welch(dep_scores_18Q4_achilles_msi, dep_scores_18Q4_achilles_mss)
 p_values_welch <- data.frame(matrix(NA, nrow = nrow(res_welch), ncol = 2))
@@ -323,8 +319,8 @@ p_values_welch$p_value <- res_welch$pvalue
 head(p_values_welch)
 ```
 
-## Volcano Plot Using Welch-Test
-We plot the mean differences of the dependency scores against the corresponding p-values and get a volcano plot.
+## Mean Differences against P-Values using Welch-Test
+I plot the mean differences of the dependency scores in MSI and MSS cell lines against the corresponding p-values. The dependency scores of WRN show a high mean difference and a significant p-value.
 ```{r}
 mean_differences <- mean_dep_scores
 mean_differences$mean_msi <- NULL
@@ -352,8 +348,8 @@ ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
   geom_label_repel()
 ```
 
-## Calculating P-Values Using Wilcoxon Test
-We calculate the p-values using the Wilcoxon-Test of the dependency scores of MSI and MSS cell lines for every gene.
+## Calculating P-Values using Wilcoxon Test
+Again, I calculate the p-values of the dependency scores for MSI and MSS cell lines for every gene, but using the Wilcoxon-Test.
 ```{r}
 res_wilc <- col_wilcoxon_twosample(dep_scores_18Q4_achilles_msi, dep_scores_18Q4_achilles_mss)
 p_values_wilc <- data.frame(matrix(NA, nrow = nrow(res_wilc), ncol = 2))
@@ -363,8 +359,8 @@ p_values_wilc$p_value <- res_wilc$pvalue
 head(p_values_wilc)
 ```
 
-## Volcano Plot Using Wilcoxon Test
-We plot the mean differences of the dependency scores against the corresponding p-values and get a volcano plot.
+## Mean Differences against P-Values using Wilcoxon-Test
+Again, I plot the mean differences of the dependency scores in MSI and MSS cell lines against the corresponding p-values. Using the appropriate test method, the p-value for WRN is even higher and the result is therefor more reliable.
 ```{r}
 # transform p-values
 p_adj_wilc <- p_values_wilc
@@ -387,8 +383,8 @@ ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
   geom_label_repel()
 ```
 
-## Volcano Plot Using Bayes moderated t-stats
-We calculate again the p-values but with Bayes moderated t-stats using limma [@limma] and plot them against the corresponding log2FoldChanges.
+## Volcano Plot using Bayes moderated t-stats
+Now I calculate the p-values using Bayes moderated t-stats in limma [@limma] as in @chan and plot them against the corresponding log2FoldChanges. With this recommended test method, the result is even more reliable.
 ```{r}
 vec <- dep_scores_18Q4_achilles_df$CCLE_MSI
 mat <- dep_scores_18Q4_achilles_df
