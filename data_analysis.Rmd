@@ -73,7 +73,7 @@ dep_scores_18Q4_achilles <- data_18Q4[["CRISPR"]]
 ```
 
 ## Visualization of Classifications
-I visualize the ratio of cell lines classified as MSS cell and cell lines classified as MSI cells for both Achilles and DRIVE data sets together and separately. We see that the number of MSS cell lines is many times higher than the number of MSI cell lines.
+I visualize the number of cell lines classified as MSS and cell lines classified as MSI for both Achilles and DRIVE datasets together and separately. We see that the number of MSS cell lines is many times higher than the number of MSI cell lines.
 ```{r}
 # count rows of MSI and MSS classified cell lines
 counts_class <- data.frame(table(data_suppl$CCLE_MSI))
@@ -110,7 +110,7 @@ bar_chart_achilles <- ggplot(data=counts_class_achilles, aes(x=Var1, y=Freq, fil
 bar_chart_total + bar_chart_drive + bar_chart_achilles
 ```
 
-In the Figure above, we see that the datasets overlap. To determine the size of the overlap, I plot the data sets in a Venn diagram.
+In the Figure above, we see that the datasets overlap. To determine the size of the overlap, I plot the datasets in a Venn diagram.
 ```{r}
 DRIVE <- data_suppl[!is.na(data_suppl$DRIVE_WRN_D2),]$CCLE_ID
 Achilles <- data_suppl[!is.na(data_suppl$CRISPR_WRN_CERES),]$CCLE_ID
@@ -211,7 +211,7 @@ box_plot_drive + box_plot_achilles
 ```
 
 ## Comparing WRN and ABHD1 Distribution
-For comparison, I plot the distributions of dependency scores of a randomly selected KO gene and the WRN gene in the Achilles dataset as histograms. The dependency scores of WRN are generally more broadly distributed. When looking at MSI cell lines, the difference becomes much clearer.
+For comparison, I plot the distributions of dependency scores for a randomly selected KO gene and the WRN gene in the Achilles dataset as histograms. The dependency scores of WRN are generally more broadly distributed. When looking at MSI cell lines, the difference becomes much clearer.
 ```{r}
 # extract dependency scores for ABHD1
 abhd1_dep_scores_achilles <- data.frame(dep_scores_18Q4_achilles[,"ABHD1"])
@@ -275,7 +275,7 @@ box_plot_abhd1 <- ggplot(dep_scores_achilles_abhd1, aes(x = CCLE_MSI, y = dep_sc
 box_plot_wrn + box_plot_abhd1
 ```
 
-# Calculating Mean Dependency Scores
+# Analysis using Welch-Test
 To reproduce the workflow in @chan, I calculate the mean values of the dependency sores for MSI and MSS cell lines separately for every gene.
 ```{r}
 # transform matrix to dataframe
@@ -307,8 +307,6 @@ colnames(mean_dep_scores) <- c("gene","mean_msi","mean_mss")
 head(mean_dep_scores)
 ```
 
-
-## Calculating P-Values using Welch-Test
 I calculate the p-values of the dependency scores for MSI and MSS cell lines for every gene using the Welch-Test. (Actually, the Welch-Test is not suitable for this data, but I do it for comparison.)
 ```{r}
 res_welch <- col_t_welch(dep_scores_18Q4_achilles_msi, dep_scores_18Q4_achilles_mss)
@@ -319,7 +317,6 @@ p_values_welch$p_value <- res_welch$pvalue
 head(p_values_welch)
 ```
 
-## Mean Differences against P-Values using Welch-Test
 I plot the mean differences of the dependency scores in MSI and MSS cell lines against the corresponding p-values. The dependency scores of WRN show a high mean difference and a significant p-value.
 ```{r}
 mean_differences <- mean_dep_scores
@@ -348,7 +345,7 @@ ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
   geom_label_repel()
 ```
 
-## Calculating P-Values using Wilcoxon Test
+## Analysis using Wilcoxon-Test
 Again, I calculate the p-values of the dependency scores for MSI and MSS cell lines for every gene, but using the Wilcoxon-Test.
 ```{r}
 res_wilc <- col_wilcoxon_twosample(dep_scores_18Q4_achilles_msi, dep_scores_18Q4_achilles_mss)
@@ -359,7 +356,6 @@ p_values_wilc$p_value <- res_wilc$pvalue
 head(p_values_wilc)
 ```
 
-## Mean Differences against P-Values using Wilcoxon-Test
 Again, I plot the mean differences of the dependency scores in MSI and MSS cell lines against the corresponding p-values. Using the appropriate test method, the p-value for WRN is even higher and the result is therefor more reliable.
 ```{r}
 # transform p-values
@@ -383,7 +379,7 @@ ggplot(data=data, aes(x=difference, y=log, label=to_label)) +
   geom_label_repel()
 ```
 
-## Volcano Plot using Bayes moderated t-stats
+## Analysis using Bayes moderated t-stats
 Now I calculate the p-values using Bayes moderated t-stats from limma [@limma] as in @chan and plot them against the corresponding mean differences. With this recommended test method, the result is even more reliable.
 ```{r}
 # calculate p-values
