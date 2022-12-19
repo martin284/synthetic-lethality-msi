@@ -303,13 +303,11 @@ dep_scores_18Q4_Achilles_mss <- dep_scores_18Q4_Achilles_df[dep_scores_18Q4_Achi
 means_msi_Achilles <- data.frame(colMeans(dep_scores_18Q4_Achilles_msi))
 means_mss_Achilles <- data.frame(colMeans(dep_scores_18Q4_Achilles_mss))
 
-# merge datasets
-means_msi_Achilles$gene <- rownames(means_msi_Achilles)
-rownames(means_msi_Achilles) <- NULL
-means_mss_Achilles$gene <- rownames(means_mss_Achilles)
-rownames(means_mss_Achilles) <- NULL
-mean_dep_scores_Achilles <- merge(means_msi_Achilles, means_mss_Achilles, by="gene")
-colnames(mean_dep_scores_Achilles) <- c("gene","mean_dep_score_msi","mean_dep_score_mss")
+# calculate differences MSI-MSS
+mean_differences_Achilles <- means_msi_Achilles - means_mss_Achilles
+colnames(mean_differences_Achilles) <- "MSI_MSS"
+
+head(mean_differences_Achilles)
 
 # do the same for DRIVE
 dep_scores_18Q4_DRIVE_df <- data.frame(dep_scores_18Q4_DRIVE)
@@ -319,14 +317,9 @@ dep_scores_18Q4_DRIVE_df <- merge(dep_scores_18Q4_DRIVE_df, classifications, by=
 dep_scores_18Q4_DRIVE_msi <- dep_scores_18Q4_DRIVE_df[dep_scores_18Q4_DRIVE_df$CCLE_MSI=="MSI",c(-1,-ncol(dep_scores_18Q4_DRIVE_df))]
 dep_scores_18Q4_DRIVE_mss <- dep_scores_18Q4_DRIVE_df[dep_scores_18Q4_DRIVE_df$CCLE_MSI=="MSS",c(-1,-ncol(dep_scores_18Q4_DRIVE_df))]
 means_msi_DRIVE <- data.frame(colMeans(dep_scores_18Q4_DRIVE_msi, na.rm = TRUE))
-colnames(means_msi_DRIVE) <- c("mean_dep_score_msi")
 means_mss_DRIVE <- data.frame(colMeans(dep_scores_18Q4_DRIVE_mss, na.rm = TRUE))
-colnames(means_mss_DRIVE) <- c("mean_dep_score_mss")
-means_msi_DRIVE$gene <- rownames(means_msi_DRIVE)
-rownames(means_msi_DRIVE) <- NULL
-means_mss_DRIVE$gene <- rownames(means_mss_DRIVE)
-rownames(means_mss_DRIVE) <- NULL
-mean_dep_scores_DRIVE <- merge(means_msi_DRIVE, means_mss_DRIVE, by="gene")
+mean_differences_DRIVE <- means_msi_DRIVE - means_mss_DRIVE
+colnames(mean_differences_DRIVE) <- "MSI_MSS"
 ```
 
 I calculate the p-values of the dependency scores for MSI and MSS cell lines for every gene using the Welch-Test. (Actually, the Welch-Test is not suitable for this data, but I do it for comparison.)
@@ -347,51 +340,43 @@ p_values_welch_DRIVE$p_value <- test_results_welch_DRIVE$pvalue
 
 I plot the mean differences of the dependency scores in MSI and MSS cell lines against the corresponding p-values. The dependency scores of WRN show a high mean difference and a significant p-value.
 ```{r}
-mean_differences_Achilles <- mean_dep_scores_Achilles
-mean_differences_Achilles$mean_dep_score_msi <- NULL
-mean_differences_Achilles$mean_dep_score_mss <- NULL
-mean_differences_Achilles$difference <- (mean_dep_scores_Achilles$mean_dep_score_msi - mean_dep_scores_Achilles$mean_dep_score_mss)
-
 # transform p-values
 p_adj_welch_Achilles <- p_values_welch_Achilles
-p_adj_welch_Achilles$p_value <- p.adjust(p_values_welch_Achilles$p_value, method = "hochberg")
+p_adj_welch_Achilles$p_value <- p.adjust(p_values_welch_Achilles$p_value, method = "BH")
 p_values_welch_log_Achilles <- p_adj_welch_Achilles
 p_values_welch_log_Achilles$p_value <- NULL
 p_values_welch_log_Achilles$log <- -log(p_adj_welch_Achilles$p_value)
 
 # create data structure for mean differences and p-values
-results_Achilles <- merge(mean_differences_Achilles, p_values_welch_log_Achilles, by="gene")
+results_Achilles <- cbind(p_values_welch_log_Achilles, mean_differences_Achilles)
+rownames(results_Achilles) <- NULL
 
 # define labeled genes
 results_Achilles$to_label <- ""
 results_Achilles$to_label[results_Achilles$gene == "WRN"] <- "WRN"
 
 # do the same for DRIVE
-mean_differences_DRIVE <- mean_dep_scores_DRIVE
-mean_differences_DRIVE$mean_msi <- NULL
-mean_differences_DRIVE$mean_mss <- NULL
-mean_differences_DRIVE$difference <- (mean_dep_scores_DRIVE$mean_dep_score_msi - mean_dep_scores_DRIVE$mean_dep_score_mss)
-
 p_adj_welch_DRIVE <- p_values_welch_DRIVE
-p_adj_welch_DRIVE$p_value <- p.adjust(p_values_welch_DRIVE$p_value, method = "hochberg")
+p_adj_welch_DRIVE$p_value <- p.adjust(p_values_welch_DRIVE$p_value, method = "BH")
 p_values_welch_log_DRIVE <- p_adj_welch_DRIVE
 p_values_welch_log_DRIVE$p_value <- NULL
 p_values_welch_log_DRIVE$log <- -log(p_adj_welch_DRIVE$p_value)
 
-results_DRIVE <- merge(mean_differences_DRIVE, p_values_welch_log_DRIVE, by="gene")
+results_DRIVE <- cbind(p_values_welch_log_DRIVE, mean_differences_DRIVE)
+rownames(results_DRIVE) <- NULL
 
 results_DRIVE$to_label <- ""
 results_DRIVE$to_label[results_DRIVE$gene == "WRN"] <- "WRN"
 
 # plots
-result_plot_Achilles <- ggplot(data=results_Achilles, aes(x=difference, y=log, label=to_label)) +
+result_plot_Achilles <- ggplot(data=results_Achilles, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
   xlab('MSI–MSS mean difference') +
   ylab('-log(P)') +
   geom_label_repel() +
   ggtitle("Result with Achilles Dataset")
 
-result_plot_DRIVE <- ggplot(data=results_DRIVE, aes(x=difference, y=log, label=to_label)) +
+result_plot_DRIVE <- ggplot(data=results_DRIVE, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
   xlab('MSI–MSS mean difference') +
   ylab('-log(P)') +
@@ -401,7 +386,6 @@ result_plot_DRIVE <- ggplot(data=results_DRIVE, aes(x=difference, y=log, label=t
 # plot both
 result_plot_Achilles
 result_plot_DRIVE
-# plot_grid(result_plot_Achilles, result_plot_DRIVE, nrow = 2, ncol = 1)
 ```
 
 ## Analysis using Wilcoxon-Test
@@ -427,13 +411,14 @@ Again, I plot the mean differences of the dependency scores in MSI and MSS cell 
 ```{r}
 # transform p-values
 p_adj_wilc_Achilles <- p_values_wilc_Achilles
-p_adj_wilc_Achilles$p_value <- p.adjust(p_values_wilc_Achilles$p_value, method = "hochberg")
+p_adj_wilc_Achilles$p_value <- p.adjust(p_values_wilc_Achilles$p_value, method = "BH")
 p_values_wilc_log_Achilles <- p_adj_wilc_Achilles
 p_values_wilc_log_Achilles$p_value <- NULL
 p_values_wilc_log_Achilles$log <- -log(p_adj_wilc_Achilles$p_value)
 
 # create data structure for mean differences and p-values
-results_wilc_Achilles <- merge(mean_differences_Achilles, p_values_wilc_log_Achilles, by="gene")
+results_wilc_Achilles <- cbind(p_values_wilc_log_Achilles, mean_differences_Achilles)
+rownames(results_wilc_Achilles) <- NULL
 
 # define labeled genes
 results_wilc_Achilles$to_label <- ""
@@ -441,25 +426,26 @@ results_wilc_Achilles$to_label[results_wilc_Achilles$gene == "WRN"] <- "WRN"
 
 # do the same for DRIVE
 p_adj_wilc_DRIVE <- p_values_wilc_DRIVE
-p_adj_wilc_DRIVE$p_value <- p.adjust(p_values_wilc_DRIVE$p_value, method = "hochberg")
+p_adj_wilc_DRIVE$p_value <- p.adjust(p_values_wilc_DRIVE$p_value, method = "BH")
 p_values_wilc_log_DRIVE <- p_adj_wilc_DRIVE
 p_values_wilc_log_DRIVE$p_value <- NULL
 p_values_wilc_log_DRIVE$log <- -log(p_adj_wilc_DRIVE$p_value)
 
-results_wilc_DRIVE <- merge(mean_differences_DRIVE, p_values_wilc_log_DRIVE, by="gene")
+results_wilc_DRIVE <- cbind(p_values_wilc_log_DRIVE, mean_differences_DRIVE)
+rownames(results_wilc_DRIVE) <- NULL
 
 results_wilc_DRIVE$to_label <- ""
 results_wilc_DRIVE$to_label[results_wilc_DRIVE$gene == "WRN"] <- "WRN"
 
 # plots
-ggplot(data=results_wilc_Achilles, aes(x=difference, y=log, label=to_label)) +
+ggplot(data=results_wilc_Achilles, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
   xlab('MSI–MSS mean difference') +
   ylab('-log(P)') +
   geom_label_repel() +
   ggtitle("Result with Achilles Dataset")
 
-ggplot(data=results_wilc_DRIVE, aes(x=difference, y=log, label=to_label)) +
+ggplot(data=results_wilc_DRIVE, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
   xlab('MSI–MSS mean difference') +
   ylab('-log(P)') +
@@ -494,7 +480,8 @@ p_adj_bayes_log_Achilles$p_adj <- NULL
 p_adj_bayes_log_Achilles$log <- -log(p_adj_bayes_Achilles$p_adj)
 
 # create data structure for mean differences and p-values
-results_bayes_Achilles <- merge(mean_differences_Achilles, p_adj_bayes_log_Achilles, by="gene")
+results_bayes_Achilles <- cbind(p_adj_bayes_log_Achilles, mean_differences_Achilles)
+rownames(results_bayes_Achilles) <- NULL
 
 # define labeled genes
 results_bayes_Achilles$to_label <- ""
@@ -522,22 +509,23 @@ p_adj_bayes_log_DRIVE <- p_adj_bayes_DRIVE
 p_adj_bayes_log_DRIVE$p_adj <- NULL
 p_adj_bayes_log_DRIVE$log <- -log(p_adj_bayes_DRIVE$p_adj)
 
-results_bayes_DRIVE <- merge(mean_differences_DRIVE, p_adj_bayes_log_DRIVE, by="gene")
+results_bayes_DRIVE <- cbind(p_adj_bayes_log_DRIVE, mean_differences_DRIVE)
+rownames(results_bayes_DRIVE) <- NULL
 
 results_bayes_DRIVE$to_label <- ""
 results_bayes_DRIVE$to_label[results_bayes_DRIVE$gene == "WRN"] <- "WRN"
 
 # plots
-ggplot(data=results_bayes_Achilles, aes(x=difference,y=log, label=to_label)) +
+ggplot(data=results_bayes_Achilles, aes(x=MSI_MSS,y=log, label=to_label)) +
   geom_point() +
-  xlab('logFoldChange') +
+  xlab('MSI–MSS mean difference') +
   ylab('-log(P_adj)') +
   geom_label_repel() +
   ggtitle("Results with Achilles Dataset")
 
-ggplot(data=results_bayes_DRIVE, aes(x=difference,y=log, label=to_label)) +
+ggplot(data=results_bayes_DRIVE, aes(x=MSI_MSS,y=log, label=to_label)) +
   geom_point() +
-  xlab('logFoldChange') +
+  xlab('MSI–MSS mean difference') +
   ylab('-log(P_adj)') +
   geom_label_repel() +
   ggtitle("Results with DRIVE Dataset")
