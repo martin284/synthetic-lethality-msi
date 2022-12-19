@@ -371,16 +371,20 @@ results_DRIVE$to_label[results_DRIVE$gene == "WRN"] <- "WRN"
 # plots
 result_plot_Achilles <- ggplot(data=results_Achilles, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
+  geom_point(data = results_Achilles[results_Achilles$to_label == "WRN",], color="red") +
   xlab('MSI–MSS mean difference') +
-  ylab('-log(P)') +
+  ylab('-log(P_adj)') +
   geom_label_repel() +
+  geom_hline(yintercept=-log(0.05)) +
   ggtitle("Result with Achilles Dataset")
 
 result_plot_DRIVE <- ggplot(data=results_DRIVE, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
+  geom_point(data = results_DRIVE[results_DRIVE$to_label == "WRN",], color="red") +
   xlab('MSI–MSS mean difference') +
-  ylab('-log(P)') +
+  ylab('-log(P_adj)') +
   geom_label_repel() +
+  geom_hline(yintercept=-log(0.05)) +
   ggtitle("Result with DRIVE Dataset")
 
 # plot both
@@ -440,16 +444,20 @@ results_wilc_DRIVE$to_label[results_wilc_DRIVE$gene == "WRN"] <- "WRN"
 # plots
 ggplot(data=results_wilc_Achilles, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
+  geom_point(data = results_wilc_Achilles[results_wilc_Achilles$to_label == "WRN",], color="red") +
   xlab('MSI–MSS mean difference') +
-  ylab('-log(P)') +
+  ylab('-log(P_adj)') +
   geom_label_repel() +
+  geom_hline(yintercept=-log(0.05)) +
   ggtitle("Result with Achilles Dataset")
 
 ggplot(data=results_wilc_DRIVE, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
+  geom_point(data = results_wilc_DRIVE[results_wilc_DRIVE$to_label == "WRN",], color="red") +
   xlab('MSI–MSS mean difference') +
-  ylab('-log(P)') +
+  ylab('-log(P_adj)') +
   geom_label_repel() +
+  geom_hline(yintercept=-log(0.05)) +
   ggtitle("Result with DRIVE Dataset")
 ```
 
@@ -518,15 +526,19 @@ results_bayes_DRIVE$to_label[results_bayes_DRIVE$gene == "WRN"] <- "WRN"
 # plots
 ggplot(data=results_bayes_Achilles, aes(x=MSI_MSS,y=log, label=to_label)) +
   geom_point() +
+  geom_point(data = results_bayes_Achilles[results_bayes_Achilles$to_label == "WRN",], color="red") +
   xlab('MSI–MSS mean difference') +
   ylab('-log(P_adj)') +
   geom_label_repel() +
+  geom_hline(yintercept=-log(0.05)) +
   ggtitle("Results with Achilles Dataset")
 
 ggplot(data=results_bayes_DRIVE, aes(x=MSI_MSS,y=log, label=to_label)) +
   geom_point() +
+  geom_point(data = results_bayes_DRIVE[results_bayes_DRIVE$to_label == "WRN",], color="red") +
   xlab('MSI–MSS mean difference') +
   ylab('-log(P_adj)') +
   geom_label_repel() +
+  geom_hline(yintercept=-log(0.05)) +
   ggtitle("Results with DRIVE Dataset")
 ```
