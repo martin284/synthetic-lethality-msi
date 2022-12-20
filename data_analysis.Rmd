@@ -282,7 +282,7 @@ box_plot_WRN + box_plot_ABHD1
 ```
 
 # Analysis using Welch-Test
-To reproduce the workflow in @chan, I calculate the mean values of the dependency sores for MSI and MSS cell lines separately for every gene.
+To reproduce the workflow in @chan, I calculate the mean differences of the dependency sores for MSI and MSS cell lines separately for every gene.
 ```{r}
 # transform matrix to dataframe
 dep_scores_18Q4_Achilles_df <- data.frame(dep_scores_18Q4_Achilles)
