@@ -54,7 +54,7 @@ library(cowplot)
 ```
 
 # Data Preprocessing
-I imported the data provided by the authors as "Supplementary Table 1". The dataset contains MSI/MSS classifications for different cancer cell lines and the corresponding dependency scores for the WRN gene. In addition, I import the data set "DepMap_18Q4_data.rds", which contains all dependency scores from the project Achilles and project DRIVE. The weblinks can all be found in @chan.
+I imported the data provided by the authors as "Supplementary Table 1". The dataset contains MSI/MSS classifications for different cancer cell lines and the corresponding dependency scores for the WRN gene. In addition, I imported the dataset "DepMap_18Q4_data.rds", which contains all dependency scores from the project Achilles and project DRIVE. The weblinks can all be found in @chan.
 ```{r, warning=FALSE}
 # suppress warning message caused by NA values
 data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencies_msi/data/"
@@ -128,7 +128,7 @@ ggVennDiagram(all, label_alpha = 0) +
 ```
 
 ## Correlation of Achilles and DRIVE
-For quality control, I plot the dependency scores of WRN which are present in both datasets against each other. The dependency scores of WRN from Achilles significantly correlate to the scores in DRIVE with the Pearson correlation coefficient 0.56. Since the Pearson correlation coefficient is not very high, the analysis should be performed separately to the two datasetsinstead of using the mean values.
+For quality control, I plotted the dependency scores of WRN which are present in both datasets against each other. The dependency scores of WRN from Achilles significantly correlate to the scores in DRIVE with the Pearson correlation coefficient 0.56. Since the Pearson correlation coefficient is not very high, the analysis should be performed separately to the two datasetsinstead of using the mean values.
 ```{r}
 # extract dependency scores
 dep_scores <- data_suppl %>% select(5,6)
@@ -140,6 +140,7 @@ ggplot(dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
   xlab("DRIVE") + ylab("Achilles") +
   ggtitle('Correlation of Dependency Scores')
 ```
+
 Given the Venn diagram and the correlation of dependency scores, I decided to perform the analysis separately for both datasets.
 
 ## Dependency Score Distributions
@@ -264,6 +265,7 @@ plot_msi <- ggplot(data=dep_scores_Achilles[dep_scores_Achilles$CCLE_MSI=="MSI",
 # plot results
 plot_mss + plot_msi
 ```
+
 I repeated the procedure using boxplots and additionally calculate the p-values for comparison. The p-value for WRN is significant, whereas the p-value for ABHD1 is not. The result indicates that the difference between the distributions of dependency scores for MSI and MSS cell lines is significant for the WRN gene, while the difference is not significant for other genes.
 ```{r}
 dep_scores_Achilles_WRN <- dep_scores_Achilles[dep_scores_Achilles$KD_KO_gene=="WRN",]
@@ -292,7 +294,7 @@ box_plot_WRN + box_plot_ABHD1
 We could see, that the analysis should be done separately for both datasets. The test method has to consider different samples sizes and sample distributions. We have also seen that, unlike other genes, the dependency scores for WRN come from different distributions. This gives a first indication that the altered expression of the WRN gene, in contrast to other genes, affects MSI and MSS cell lines differently, as claimed by @chan.
 
 # Data Analysis
-## Welch-Test
+## Mean Differences
 To reproduce the workflow by @chan, I calculated the differences of the mean values of dependency sores for MSI and MSS cell lines for every gene.
 ```{r}
 # transform matrix to dataframe
@@ -333,7 +335,8 @@ mean_differences_DRIVE <- means_msi_DRIVE - means_mss_DRIVE
 colnames(mean_differences_DRIVE) <- "MSI_MSS"
 ```
 
-I calculated the p-values of the dependency scores for MSI and MSS cell lines for every gene using the Welch-Test. (Actually, the Welch-Test is not suitable for this data, but I do it as comparison.)
+## Welch Test
+I calculated the p-values of the dependency scores for MSI and MSS cell lines for every gene using the welch test. (Actually, the welch test is not suitable for this data, but I do it as comparison.)
 ```{r}
 test_results_welch_Achilles <- col_t_welch(dep_scores_18Q4_Achilles_msi, dep_scores_18Q4_Achilles_mss)
 p_values_welch_Achilles <- data.frame(matrix(NA, nrow = nrow(test_results_welch_Achilles), ncol = 2))
@@ -349,7 +352,7 @@ p_values_welch_DRIVE$gene <- rownames(test_results_welch_DRIVE)
 p_values_welch_DRIVE$p_value <- test_results_welch_DRIVE$pvalue
 ```
 
-I plotted the mean value differences of the dependency scores in MSI and MSS cell lines against the corresponding p-values. As the figure shown, the WRN have a great mean value difference and a small adjusted p-value. The cell lines depend to different degrees on some genes. This difference is greatest for WRN. 
+I plotted the mean value differences of the dependency scores in MSI and MSS cell lines against the corresponding p-values. The horizontal line marks the significance level of 5%. As the figure shown, the WRN have a great mean value difference and a small adjusted p-value. The cell lines depend to different degrees on some genes. This difference is greatest for WRN. 
 ```{r}
 # transform p-values
 p_adj_welch_Achilles <- p_values_welch_Achilles
@@ -403,8 +406,8 @@ result_plot_Achilles
 result_plot_DRIVE
 ```
 
-## Wilcoxon-Test
-Again, I calculated the p-values of the dependency scores for MSI and MSS cell lines for every gene, but using the Wilcoxon-Test. The Wilcoxon-Test, unlike the Welch-Test, takes into account that the MSI samples are not normally distributed. 
+## Wilcoxon Test
+Again, I calculated the p-values of the dependency scores for MSI and MSS cell lines for every gene, but using the wilcoxon test. The wilcoxon test, unlike the Welch-Test, takes into account that the MSI samples are not normally distributed. 
 ```{r}
 # Achilles
 test_results_wilc_Achilles <- col_wilcoxon_twosample(dep_scores_18Q4_Achilles_msi, dep_scores_18Q4_Achilles_mss)
@@ -555,4 +558,4 @@ ggplot(data=results_bayes_DRIVE, aes(x=MSI_MSS,y=log, label=to_label)) +
 ```
 
 ## Summary
-I used three different test methods to validate the result for both Achilles and DRIVE separately. I could reproduce the result by @chan using the Bayes moderated t-stats. WRN also achieved a low p-value with a large mean difference using the Welch- and Wilcoxon-Tests. The result suggests that WRN is indeed a promising target for synthetic lethality.
+I used three different test methods to validate the result for both Achilles and DRIVE separately. I could reproduce the result by @chan using the Bayes moderated t-stats. WRN also achieved a low p-value with a large mean difference using the welch and wilcoxon tests. The result suggests that WRN is indeed a promising target for synthetic lethality.
