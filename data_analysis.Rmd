@@ -36,7 +36,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Scientific Background
-Scientific background of this analysis is research into cancer and its treatment. The approach by @chan2011harnessing in cancer treatment is to exploit synthetic lethality. The idea is to find a gene whose deactivation leads to the elimination of cancer cells while sparing healthy cells. Therefore @chan investigated the genetic dependencies of microsatellite instable (MSI) compared to microsatellite stable (MSS) cells to find a potential target. The aim of this analysis is to reproduce their results.
+Scientific background of this analysis is research into cancer and its treatment. The approach by @chan2011harnessing in cancer treatment is to exploit synthetic lethality. The idea is to find a gene whose deactivation leads to the elimination of cancer cells while sparing healthy cells. To find a potential target, @chan investigated the genetic dependencies of microsatellite instable (MSI) compared to microsatellite stable (MSS) cells. The aim of this analysis is to reproduce their results.
 
 ```{r, message = FALSE, results="hide", echo=TRUE}
 library(ggplot2)
@@ -54,7 +54,9 @@ library(cowplot)
 ```
 
 # Data Preprocessing
-I imported the data provided by the authors as "Supplementary Table 1". The dataset contains MSI/MSS classifications for different cancer cell lines and the corresponding dependency scores for the WRN gene. In addition, I imported the dataset "DepMap_18Q4_data.rds", which contains all dependency scores from the project Achilles and project DRIVE. The weblinks can all be found in @chan.
+I imported the data provided by the authors as "Supplementary Table 1". The dataset contains MSI/MSS classifications for different cancer cell lines and the corresponding dependency scores for WRN (Werner Syndrome Protein). In addition, I imported the dataset "DepMap_18Q4_data.rds", which contains all dependency scores from the project Achilles and project DRIVE. In both projects, thousands of genes were knocked out and knocked down in different cancer cell lines to identify the genes that affect cancer cell survival. The
+dependency of cancer cells on a specific gene with regard to survival and proliferation is represented in dependency scores. For each cell line, a dependency score was calculated for
+approximately 17,000 genes. All weblinks can be found in @chan.
 ```{r, warning=FALSE}
 # suppress warning message caused by NA values
 data_dir <- "C:/Users/Martin/Documents/Master/Forschungspraktikum/genetic_dependencies_msi/data/"
@@ -78,7 +80,7 @@ dep_scores_18Q4_Achilles <- data_18Q4[["CRISPR"]]
 
 # Data Exploration
 ## MSI/MSS Classifications
-To find out the absolute number of MSS and MSI cell lines, I made a bar chart. And as the bar chart shows, the number of MSS cell lines is many times higher than the number of MSI cell lines. This is an important information for the application of the appropriate test method.
+To find out the absolute number of MSS and MSI cell lines, I made a bar chart. And as the bar chart shown, the number of MSS cell lines is many times higher than the number of MSI cell lines. This is an important information for the application of the appropriate test method.
 ```{r}
 # count rows of MSI and MSS classified cell lines
 counts_class <- data.frame(table(data_suppl$CCLE_MSI))
@@ -116,7 +118,7 @@ bar_chart_total + bar_chart_DRIVE + bar_chart_Achilles
 ```
 
 ## Cell Lines in DRIVE and Achilles 
-The figure above suggests, that the cell lines overlap in both datasets. To determine the size of the overlap, I plotted the datasets in a Venn diagram. The diagram shows, that the datasets overlap at 214 cell lines, while Achilles contains 147 and DRIVE 231 exclusive cell lines. This suggests that the analysis should be performed separately for both datasets instead of using the intersection. Otherwise, I would lose the information of 378 cell lines and could not use the full potential of the analysis.  
+The figure above suggests, that the cell lines overlap in both datasets. To determine the size of the overlap, I plotted the datasets in a Venn diagram. The diagram shows, that the datasets overlap at 214 cell lines, while Achilles contains 147 and DRIVE 231 exclusive cell lines. This suggests that the analysis should be performed separately for both datasets instead of using the intersection. Otherwise, I would lose the information of 378 cell lines and could not use the full potential of the analysis. 
 ```{r}
 DRIVE <- data_suppl[!is.na(data_suppl$DRIVE_WRN_D2),]$CCLE_ID
 Achilles <- data_suppl[!is.na(data_suppl$CRISPR_WRN_CERES),]$CCLE_ID
@@ -128,7 +130,7 @@ ggVennDiagram(all, label_alpha = 0) +
 ```
 
 ## Correlation of Achilles and DRIVE
-For quality control, I plotted the dependency scores of WRN which are present in both datasets against each other. The dependency scores of WRN from Achilles significantly correlate to the scores in DRIVE with the Pearson correlation coefficient 0.56. Since the Pearson correlation coefficient is not very high, the analysis should be performed separately to the two datasetsinstead of using the mean values.
+For quality control, I plotted the dependency scores of WRN which are present in both datasets against each other. The dependency scores of WRN from Achilles significantly correlate with the scores in DRIVE with the Pearson correlation coefficient 0.56. Since the Pearson correlation coefficient is not very high, the analysis should be performed separately to the two datasetsinstead of using the mean values.
 ```{r}
 # extract dependency scores
 dep_scores <- data_suppl %>% select(5,6)
@@ -196,8 +198,7 @@ plot_msi <- ggplot(data = dep_scores_msi, aes(x=dep_score, color=dataset)) +
 plot_mss + plot_msi
 ```
 
-To check that the different distributions are not due to the different dataset sizes, I plotted the results in boxplots and test whether the scores come from the same distribution. The p-value is significantly low in both datasets. This suggests that MSI cell lines and MSS cell lines are differently dependent on WRN.
-
+To check that the different distributions are not due to the different dataset sizes, I plotted the results in boxplots and tested whether the scores come from the same distribution. The p-value is significantly low in both datasets. This suggests that MSI cell lines and MSS cell lines are differently dependent on WRN.
 ```{r}
 # extract DRIVE and Achilles data separately with classifications
 dep_scores_drive_with_class <- na.omit(data_suppl %>% select(4,5))
@@ -476,7 +477,7 @@ ggplot(data=results_wilc_DRIVE, aes(x=MSI_MSS, y=log, label=to_label)) +
 ```
 
 ## Bayes moderated t-stats
-Now I calculated the p-values using Bayes moderated t-stats from limma [@limma] as in @chan and plotted them against the corresponding mean differences. With this recommended test method, I could reproduce the result by @chan.
+Now I calculated the p-values using Bayes moderated t-stats using the R package limma [@limma] as in @chan and plotted them against the corresponding mean differences. With this recommended test method, I could reproduce the result by @chan.
 ```{r}
 # calculate p-values
 vec_Achilles <- dep_scores_18Q4_Achilles_df$CCLE_MSI
