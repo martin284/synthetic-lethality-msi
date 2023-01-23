@@ -139,8 +139,9 @@ dep_scores <- na.omit(dep_scores)
 # create scatter plot
 ggplot(dep_scores, aes(x=DRIVE_WRN_D2, y=CRISPR_WRN_CERES)) +
   geom_point() + stat_cor() +
-  xlab("DRIVE") + ylab("Achilles") +
-  ggtitle('Correlation of Dependency Scores')
+  xlab("DRIVE (KD)") + ylab("Achilles (KO)") +
+  ggtitle('Correlation of Dependency Scores') +
+  annotate("text", x = -0.75, y = 0.15, label = paste("n =", nrow(dep_scores)))
 ```
 
 Given the Venn diagram and the correlation of dependency scores, I decided to perform the analysis separately for both datasets.
@@ -206,7 +207,7 @@ dep_scores_achilles_with_class <- na.omit(data_suppl %>% select(4,6))
 
 box_plot_drive <- ggplot(dep_scores_drive_with_class, aes(x = CCLE_MSI, y = DRIVE_WRN_D2, fill = CCLE_MSI)) +
   geom_violin() +
-  ggtitle("Boxplot for DRIVE") +
+  ggtitle("WRN Dependency Scores in DRIVE") +
   theme(legend.position = "none") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
   stat_compare_means(method = "wilcox.test") +
@@ -215,7 +216,7 @@ box_plot_drive <- ggplot(dep_scores_drive_with_class, aes(x = CCLE_MSI, y = DRIV
 box_plot_achilles <- ggplot(dep_scores_achilles_with_class, aes(x = CCLE_MSI, y = CRISPR_WRN_CERES, fill = CCLE_MSI)) +
   theme(legend.position = "none") +
   geom_violin() +
-  ggtitle("Boxplot for Achilles") +
+  ggtitle("WRN Dependency Scores in Achilles") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
   stat_compare_means(method = "wilcox.test") +
   xlab("") + ylab("Dependency Score")
@@ -274,7 +275,7 @@ dep_scores_Achilles_ABHD1 <- dep_scores_Achilles[dep_scores_Achilles$KD_KO_gene=
 
 box_plot_WRN <- ggplot(dep_scores_Achilles_WRN, aes(x = CCLE_MSI, y = dep_score, fill = CCLE_MSI)) +
   geom_violin() +
-  ggtitle("WRN in Achilles") +
+  ggtitle("WRN Dependency Scores in Achilles") +
   theme(legend.position = "none") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
   stat_compare_means(method = "wilcox.test") +
@@ -283,7 +284,7 @@ box_plot_WRN <- ggplot(dep_scores_Achilles_WRN, aes(x = CCLE_MSI, y = dep_score,
 box_plot_ABHD1 <- ggplot(dep_scores_Achilles_ABHD1, aes(x = CCLE_MSI, y = dep_score, fill = CCLE_MSI)) +
   theme(legend.position = "none") +
   geom_violin() +
-  ggtitle("ABHD1 in Achilles") +
+  ggtitle("ABHD1 Dependency Scores in Achilles") +
   geom_boxplot(outlier.shape = NA, show.legend = F,width = 0.2, position = position_dodge(width = 0.9)) +
   stat_compare_means(method = "wilcox.test") +
   ylab("Dependency Score") + xlab("")
@@ -391,7 +392,7 @@ result_plot_Achilles <- ggplot(data=results_Achilles, aes(x=MSI_MSS, y=log, labe
   ylab('-log(P_adj)') +
   geom_label_repel() +
   geom_hline(yintercept=-log(0.05)) +
-  ggtitle("Result with Achilles Dataset")
+  ggtitle("Wech-Test with Achilles Dataset")
 
 result_plot_DRIVE <- ggplot(data=results_DRIVE, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
@@ -400,7 +401,7 @@ result_plot_DRIVE <- ggplot(data=results_DRIVE, aes(x=MSI_MSS, y=log, label=to_l
   ylab('-log(P_adj)') +
   geom_label_repel() +
   geom_hline(yintercept=-log(0.05)) +
-  ggtitle("Result with DRIVE Dataset")
+  ggtitle("Wech-Test with DRIVE Dataset")
 
 # plot both
 result_plot_Achilles
@@ -464,7 +465,7 @@ ggplot(data=results_wilc_Achilles, aes(x=MSI_MSS, y=log, label=to_label)) +
   ylab('-log(P_adj)') +
   geom_label_repel() +
   geom_hline(yintercept=-log(0.05)) +
-  ggtitle("Result with Achilles Dataset")
+  ggtitle("Wilcoxon-Test with Achilles Dataset")
 
 ggplot(data=results_wilc_DRIVE, aes(x=MSI_MSS, y=log, label=to_label)) +
   geom_point() +
@@ -473,7 +474,7 @@ ggplot(data=results_wilc_DRIVE, aes(x=MSI_MSS, y=log, label=to_label)) +
   ylab('-log(P_adj)') +
   geom_label_repel() +
   geom_hline(yintercept=-log(0.05)) +
-  ggtitle("Result with DRIVE Dataset")
+  ggtitle("Wilcoxon-Test with DRIVE Dataset")
 ```
 
 ## Bayes moderated t-stats
